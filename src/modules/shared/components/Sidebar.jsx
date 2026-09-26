@@ -1,60 +1,71 @@
 import React from 'react';
 import { 
-  LayoutDashboard, 
   Package, 
-  ArrowDownLeft, 
-  ArrowUpRight, 
-  SlidersHorizontal, 
-  ArrowLeftRight, 
-  History, 
+  Tag, 
   Warehouse, 
-  Settings, 
-  User, 
-  LogOut,
-  Layers
+  MapPin, 
+  Sliders, 
+  Database,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
-export default function Sidebar({ activeTab, onSelectTab, lowStockCount = 0 }) {
+export default function Sidebar({ activeTab, onSelectTab }) {
   const navSections = [
     {
-      title: 'CORE OVERVIEW',
-      items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, owner: 'Faizan' }
-      ]
-    },
-    {
-      title: 'INVENTORY & CATALOG',
+      title: 'MASTER CATALOG',
       items: [
         { 
           id: 'products', 
           label: 'Products', 
           icon: Package, 
-          owner: 'Tarun ⭐', 
-          badge: lowStockCount > 0 ? `${lowStockCount} alert` : null,
-          badgeType: 'warning'
+          description: 'Catalog, SKU, and Availability'
         },
         { 
-          id: 'adjustments', 
-          label: 'Stock Adjustments', 
-          icon: SlidersHorizontal, 
-          owner: 'Tarun ⭐' 
+          id: 'categories', 
+          label: 'Categories', 
+          icon: Tag, 
+          description: 'Hierarchical Taxonomies'
         }
       ]
     },
     {
-      title: 'STOCK OPERATIONS',
+      title: 'FACILITIES & STORAGE',
       items: [
-        { id: 'receipts', label: 'Receipts (Inbound)', icon: ArrowDownLeft, owner: 'Prince', status: 'Inbound' },
-        { id: 'deliveries', label: 'Delivery Orders', icon: ArrowUpRight, owner: 'Prince', status: 'Outbound' },
-        { id: 'transfers', label: 'Internal Transfers', icon: ArrowLeftRight, owner: 'Ameer', status: 'Movement' },
-        { id: 'ledger', label: 'Stock Ledger (Audit)', icon: History, owner: 'Ameer', status: 'Log' }
+        { 
+          id: 'warehouses', 
+          label: 'Warehouses', 
+          icon: Warehouse, 
+          description: 'Distribution Centers'
+        },
+        { 
+          id: 'locations', 
+          label: 'Location Hierarchy', 
+          icon: MapPin, 
+          description: 'Spatial Tree (Zones & Bins)'
+        }
       ]
     },
     {
-      title: 'CONFIGURATION',
+      title: 'INVENTORY POLICIES',
       items: [
-        { id: 'warehouses', label: 'Warehouses & Bins', icon: Warehouse, owner: 'Ameer' },
-        { id: 'settings', label: 'System Settings', icon: Settings, owner: 'System' }
+        { 
+          id: 'reorder', 
+          label: 'Reorder Rules', 
+          icon: Sliders, 
+          description: 'Safety Stock Min/Max Limits'
+        }
+      ]
+    },
+    {
+      title: 'TEAM INTEGRATION',
+      items: [
+        { 
+          id: 'contract', 
+          label: 'Shared DB Contract', 
+          icon: Database, 
+          description: 'Member 2 API & Schema Agreement'
+        }
       ]
     }
   ];
@@ -83,11 +94,10 @@ export default function Sidebar({ activeTab, onSelectTab, lowStockCount = 0 }) {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {item.badge && (
-                          <span className="nav-pill-badge">{item.badge}</span>
-                        )}
-                        {item.owner.includes('Tarun') && (
-                          <span className="active-lead-tag">YOUR MODULE</span>
+                        {item.id !== 'contract' ? (
+                          <span className="active-lead-tag">MEMBER 2</span>
+                        ) : (
+                          <span className="text-[10px] text-blue-400 font-mono">CONTRACT</span>
                         )}
                       </div>
                     </button>
@@ -103,13 +113,12 @@ export default function Sidebar({ activeTab, onSelectTab, lowStockCount = 0 }) {
         <div className="team-collab-box">
           <div className="text-xs font-semibold text-neutral-300 mb-1 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-            Team StockSense Active
+            Member 2 Scope Active
           </div>
           <div className="text-[11px] text-neutral-400 leading-tight">
-            Tarun: Products & Adjustments<br/>
-            Faizan: Auth & Dashboard<br/>
-            Prince: Receipts & Deliveries<br/>
-            Ameer: Transfers & Ledger
+            Ownership: Product & Warehouse<br/>
+            Layer: Services & APIs Upward<br/>
+            Shared DB: Contract Consumption
           </div>
         </div>
       </div>

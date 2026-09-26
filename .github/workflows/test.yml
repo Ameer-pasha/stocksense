@@ -1,0 +1,24 @@
+name: Backend tests
+on:
+  push:
+    branches: [arena/01a0dc7d-stock]
+  pull_request:
+    paths:
+      - '**/*.js'
+      - 'package*.json'
+      - '.github/workflows/test.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+        env:
+          REQUIRE_DB_TESTS: '1'
