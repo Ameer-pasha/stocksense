@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import Navbar from './modules/shared/components/Navbar';
 import Sidebar from './modules/shared/components/Sidebar';
 import ToastNotification from './modules/shared/components/ToastNotification';
-import ModulePlaceholder from './modules/operations/ModulePlaceholder';
-import StockLedgerPreview from './modules/operations/StockLedgerPreview';
-import DashboardSummary from './modules/dashboard/DashboardSummary';
 import ContractViewer from './modules/shared/components/ContractViewer';
 
 // Member 2 Core Inventory & Warehouse Modules
@@ -52,7 +49,7 @@ export default function App() {
 
         {/* Dynamic Main Workspace */}
         <main className="main-content">
-          {/* Member 2: Product Management */}
+          {/* Deliverables 1, 5, 7: Product Management & Availability View */}
           {activeTab === 'products' && (
             <ProductListPage
               onNotify={handleNotify}
@@ -60,14 +57,14 @@ export default function App() {
             />
           )}
 
-          {/* Member 2: Category Management */}
+          {/* Deliverable 2: Category Management */}
           {activeTab === 'categories' && (
             <CategoryListPage
               onNotify={handleNotify}
             />
           )}
 
-          {/* Member 2: Warehouse Management */}
+          {/* Deliverable 3: Warehouse Management */}
           {activeTab === 'warehouses' && (
             <WarehouseListPage
               onNotify={handleNotify}
@@ -75,7 +72,7 @@ export default function App() {
             />
           )}
 
-          {/* Member 2: Location Management */}
+          {/* Deliverable 4: Location Hierarchy Management */}
           {activeTab === 'locations' && (
             <LocationHierarchyPage
               onNotify={handleNotify}
@@ -83,7 +80,7 @@ export default function App() {
             />
           )}
 
-          {/* Member 2: Reordering Rules */}
+          {/* Deliverable 6: Reordering Rules */}
           {activeTab === 'reorder' && (
             <ReorderRulesPage
               onNotify={handleNotify}
@@ -94,84 +91,6 @@ export default function App() {
           {/* Shared DB Contract Viewer */}
           {activeTab === 'contract' && (
             <ContractViewer />
-          )}
-
-          {/* Member 3: Stock Adjustments (Explicitly Owned by Member 3) */}
-          {activeTab === 'adjustments' && (
-            <ModulePlaceholder
-              title="Stock Adjustments"
-              description="Reconcile physical stock counts against recorded inventory. Process: Initiate physical count → Record discrepancy → Manager approval → Ledger reconciliation."
-              assignedTo="Member 3"
-              role="Person 3 (Operations Lead)"
-              features={[
-                'Physical inventory cycle counts and barcode scanner input',
-                'Positive & negative discrepancy reconciliation',
-                'Reason code tagging (damage, spoilage, shrinkage, count error)',
-                'Direct emission of adjustment entries into Member 1 Stock Ledger'
-              ]}
-              onGoToProducts={() => setActiveTab('products')}
-            />
-          )}
-
-          {/* Member 3: Receipts */}
-          {activeTab === 'receipts' && (
-            <ModulePlaceholder
-              title="Receipts (Incoming Stock)"
-              description="Used when goods arrive from vendors. Process: Create receipt → Add supplier & items → Validate → Stock increases automatically."
-              assignedTo="Member 3"
-              role="Person 3 (Operations Lead)"
-              features={[
-                'Vendor PO matching & goods receipt note generation',
-                'Multi-line item quantity receiving',
-                'Stock auto-increment in designated warehouse rack',
-                'Integrated with StockSense Stock Ledger'
-              ]}
-              onGoToProducts={() => setActiveTab('products')}
-            />
-          )}
-
-          {/* Member 3: Deliveries */}
-          {activeTab === 'deliveries' && (
-            <ModulePlaceholder
-              title="Delivery Orders (Outgoing Stock)"
-              description="Used when items leave warehouse for customer dispatch. Process: Pick items → Pack items → Validate → Stock decreases automatically."
-              assignedTo="Member 3"
-              role="Person 3 (Operations Lead)"
-              features={[
-                'Sales order pick list generation',
-                'Packing verification & weigh-in',
-                'Automatic stock decrement upon dispatch validation',
-                'Customer consignment tracking'
-              ]}
-              onGoToProducts={() => setActiveTab('products')}
-            />
-          )}
-
-          {/* Member 3: Transfers */}
-          {activeTab === 'transfers' && (
-            <ModulePlaceholder
-              title="Internal Transfers"
-              description="Relocate inventory internally between facilities: Main Warehouse → Production Floor, Rack A → Rack B, or Warehouse 1 → Warehouse 2."
-              assignedTo="Member 3"
-              role="Person 3 (Operations Lead)"
-              features={[
-                'Two-step internal movement (Source Location → Destination Location)',
-                'Maintains total company stock unchanged while updating storage bins',
-                'Automatic ledger record emission',
-                'Warehouse transfer manifest printing'
-              ]}
-              onGoToProducts={() => setActiveTab('products')}
-            />
-          )}
-
-          {/* Member 1: Stock Ledger */}
-          {activeTab === 'ledger' && (
-            <StockLedgerPreview />
-          )}
-
-          {/* Member 4: Dashboard */}
-          {activeTab === 'dashboard' && (
-            <DashboardSummary onNavigate={setActiveTab} />
           )}
         </main>
       </div>

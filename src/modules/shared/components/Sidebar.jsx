@@ -1,78 +1,71 @@
 import React from 'react';
 import { 
-  LayoutDashboard, 
   Package, 
   Tag, 
   Warehouse, 
   MapPin, 
   Sliders, 
-  ArrowDownLeft, 
-  ArrowUpRight, 
-  ArrowLeftRight, 
-  SlidersHorizontal,
-  History, 
   Database,
-  ShieldCheck,
-  CheckCircle2
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, onSelectTab }) {
   const navSections = [
     {
-      title: 'PRODUCT & WAREHOUSE (YOUR SCOPE)',
+      title: 'MASTER CATALOG',
       items: [
         { 
           id: 'products', 
           label: 'Products', 
           icon: Package, 
-          owner: 'Tarun (You)', 
-          isMember2: true
+          description: 'Catalog, SKU, and Availability'
         },
         { 
           id: 'categories', 
           label: 'Categories', 
           icon: Tag, 
-          owner: 'Tarun (You)', 
-          isMember2: true
-        },
+          description: 'Hierarchical Taxonomies'
+        }
+      ]
+    },
+    {
+      title: 'FACILITIES & STORAGE',
+      items: [
         { 
           id: 'warehouses', 
           label: 'Warehouses', 
           icon: Warehouse, 
-          owner: 'Tarun (You)', 
-          isMember2: true
+          description: 'Distribution Centers'
         },
         { 
           id: 'locations', 
           label: 'Location Hierarchy', 
           icon: MapPin, 
-          owner: 'Tarun (You)', 
-          isMember2: true
-        },
-        { 
-          id: 'reorder', 
-          label: 'Reorder Rules', 
-          icon: Sliders, 
-          owner: 'Tarun (You)', 
-          isMember2: true
+          description: 'Spatial Tree (Zones & Bins)'
         }
       ]
     },
     {
-      title: 'OPERATIONS & MOVEMENT (MEMBER 3)',
+      title: 'INVENTORY POLICIES',
       items: [
-        { id: 'receipts', label: 'Receipts (Inbound)', icon: ArrowDownLeft, owner: 'Member 3' },
-        { id: 'deliveries', label: 'Delivery Orders', icon: ArrowUpRight, owner: 'Member 3' },
-        { id: 'transfers', label: 'Internal Transfers', icon: ArrowLeftRight, owner: 'Member 3' },
-        { id: 'adjustments', label: 'Stock Adjustments', icon: SlidersHorizontal, owner: 'Member 3' }
+        { 
+          id: 'reorder', 
+          label: 'Reorder Rules', 
+          icon: Sliders, 
+          description: 'Safety Stock Min/Max Limits'
+        }
       ]
     },
     {
-      title: 'CORE PLATFORM (MEMBERS 1 & 4)',
+      title: 'TEAM INTEGRATION',
       items: [
-        { id: 'dashboard', label: 'Dashboard & Alerts', icon: LayoutDashboard, owner: 'Member 4' },
-        { id: 'ledger', label: 'Stock Ledger (Audit)', icon: History, owner: 'Member 1' },
-        { id: 'contract', label: 'Shared DB Contract', icon: Database, owner: 'DB Lead' }
+        { 
+          id: 'contract', 
+          label: 'Shared DB Contract', 
+          icon: Database, 
+          description: 'Member 2 API & Schema Agreement'
+        }
       ]
     }
   ];
@@ -101,10 +94,10 @@ export default function Sidebar({ activeTab, onSelectTab }) {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {item.isMember2 ? (
-                          <span className="active-lead-tag">YOUR MODULE</span>
+                        {item.id !== 'contract' ? (
+                          <span className="active-lead-tag">MEMBER 2</span>
                         ) : (
-                          <span className="text-[10px] text-neutral-500 font-mono">{item.owner}</span>
+                          <span className="text-[10px] text-blue-400 font-mono">CONTRACT</span>
                         )}
                       </div>
                     </button>
@@ -120,12 +113,12 @@ export default function Sidebar({ activeTab, onSelectTab }) {
         <div className="team-collab-box">
           <div className="text-xs font-semibold text-neutral-300 mb-1 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-            Member 2 Architecture Active
+            Member 2 Scope Active
           </div>
           <div className="text-[11px] text-neutral-400 leading-tight">
-            Role: Product & Warehouse Application Layer<br/>
-            Consumes: Shared DB Contract<br/>
-            Scope: Master Data + Policies (Clean Boundary)
+            Ownership: Product & Warehouse<br/>
+            Layer: Services & APIs Upward<br/>
+            Shared DB: Contract Consumption
           </div>
         </div>
       </div>
