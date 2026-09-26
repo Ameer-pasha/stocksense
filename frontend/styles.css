@@ -235,8 +235,11 @@ body.desktop-app {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 10px 10px;
+  padding: 8px 10px;
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 .nav-section-title {
@@ -309,9 +312,39 @@ body.desktop-app {
 }
 
 .sidebar-footer {
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-top: 1px solid var(--border);
   background: var(--bg-surface);
+  margin-top: auto;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sidebar-footer .dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-sidebar-up {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  top: auto;
+  left: 0;
+  right: 0;
+  width: 100%;
+  min-width: 230px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 6px;
+  display: none;
+  z-index: 250;
+  animation: slideUp 0.15s ease-out;
+}
+
+.dropdown-sidebar-up.active {
+  display: block;
 }
 
 .sidebar-user-card {
@@ -324,6 +357,7 @@ body.desktop-app {
   background: var(--bg-muted);
   border: 1px solid var(--border);
   transition: all 0.15s ease;
+  user-select: none;
 }
 
 .sidebar-user-card:hover {

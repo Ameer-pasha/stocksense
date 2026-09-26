@@ -108,15 +108,48 @@
         </button>
       </nav>
 
-      <!-- Sidebar User Footer -->
+      <!-- Sidebar User Footer & Account Menu -->
       <div class="sidebar-footer">
-        <div class="sidebar-user-card" onclick="navigateTo('auth')" title="View Authentication & Account Settings" role="button" tabindex="0">
-          <div class="avatar-circle" id="sidebarUserAvatar">M4</div>
-          <div class="user-meta">
-            <span class="user-name" id="sidebarUserName">Member 4</span>
-            <span class="user-role" id="sidebarUserRole">Admin &middot; Online</span>
+        <div class="dropdown-wrapper">
+          <div class="sidebar-user-card" onclick="toggleDropdown('sidebarUserDropdown')" onkeydown="if(event.key==='Enter'||event.key===' ')toggleDropdown('sidebarUserDropdown')" title="User Profile & Authentication Menu" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false">
+            <div class="avatar-circle" id="sidebarUserAvatar">M4</div>
+            <div class="user-meta">
+              <span class="user-name" id="sidebarUserName">Member 4</span>
+              <span class="user-role" id="sidebarUserRole">Admin &middot; Online</span>
+            </div>
+            <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
           </div>
-          <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+
+          <div id="sidebarUserDropdown" class="dropdown-menu dropdown-sidebar-up">
+            <div class="dropdown-header" id="sidebarMenuHeader">Logged in as Member 4</div>
+            <a href="#" onclick="navigateTo('auth'); toggleDropdown('sidebarUserDropdown'); return false;" class="dropdown-item">
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <span>Authentication Center</span>
+            </a>
+            <a href="#" onclick="openModal('settingsModal'); toggleDropdown('sidebarUserDropdown'); return false;" class="dropdown-item">
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              <span>System Settings & Alerts</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-header text-xs">Switch Quick Profile</div>
+            <a href="#" onclick="quickLogin('ameer@stocksense.io', 'password123'); toggleDropdown('sidebarUserDropdown'); return false;" class="dropdown-item">
+              <span class="badge badge-primary badge-sm" style="font-size: 0.65rem; padding: 2px 6px;">AP</span>
+              <span>Ameer Pasha (Admin)</span>
+            </a>
+            <a href="#" onclick="quickLogin('member4@stocksense.io', 'password123'); toggleDropdown('sidebarUserDropdown'); return false;" class="dropdown-item">
+              <span class="badge badge-primary badge-sm" style="font-size: 0.65rem; padding: 2px 6px;">M4</span>
+              <span>Member 4 (Lead)</span>
+            </a>
+            <a href="#" onclick="quickLogin('faizan@stocksense.io', 'password123'); toggleDropdown('sidebarUserDropdown'); return false;" class="dropdown-item">
+              <span class="badge badge-secondary badge-sm" style="font-size: 0.65rem; padding: 2px 6px;">FZ</span>
+              <span>Faizan (Staff)</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" onclick="handleAuthLogout(); toggleDropdown('sidebarUserDropdown'); return false;" class="dropdown-item text-danger">
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span>Sign Out</span>
+            </a>
+          </div>
         </div>
       </div>
     </aside>
@@ -205,34 +238,6 @@
           <button class="icon-btn mobile-preview-btn" onclick="openModal('mobilePreviewModal')" title="View Responsive Mobile Companion Mockup (Wireframe #25)">
             <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
           </button>
-
-          <!-- User Profile Menu -->
-          <div class="dropdown-wrapper">
-            <div class="user-pill" onclick="toggleDropdown('userMenuDropdown')">
-              <div class="avatar-circle" id="currentUserAvatar">M4</div>
-              <div class="user-meta">
-                <span class="user-name" id="currentUserName">Member 4</span>
-                <span class="user-role" id="currentUserRole">Admin</span>
-              </div>
-              <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </div>
-            <div id="userMenuDropdown" class="dropdown-menu dropdown-right">
-              <div class="dropdown-header" id="userMenuHeader">Logged in as Member 4</div>
-              <a href="#" onclick="navigateTo('auth'); toggleDropdown('userMenuDropdown'); return false;" class="dropdown-item">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                <span>Authentication & Session</span>
-              </a>
-              <a href="#" onclick="openModal('settingsModal'); toggleDropdown('userMenuDropdown'); return false;" class="dropdown-item">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                <span>System Settings & Alerts</span>
-              </a>
-              <div class="dropdown-divider"></div>
-              <a href="#" onclick="resetDemoData(); toggleDropdown('userMenuDropdown'); return false;" class="dropdown-item text-warning">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span>Reset Demo Data</span>
-              </a>
-            </div>
-          </div>
         </div>
       </header>
 

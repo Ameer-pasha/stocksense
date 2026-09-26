@@ -1892,10 +1892,12 @@ function updateUserProfileUI(user) {
   const sbNameEl = document.getElementById('sidebarUserName');
   const sbRoleEl = document.getElementById('sidebarUserRole');
   const sbAvatarEl = document.getElementById('sidebarUserAvatar');
+  const sbHeaderEl = document.getElementById('sidebarMenuHeader');
 
   if (sbNameEl) sbNameEl.textContent = user.name || 'User';
   if (sbRoleEl) sbRoleEl.textContent = `${roleText} · Online`;
   if (sbAvatarEl) sbAvatarEl.textContent = initials;
+  if (sbHeaderEl) sbHeaderEl.textContent = `Logged in as ${user.name || 'User'}`;
 
   // 3. Dedicated Auth Page Elements
   const apNameEl = document.getElementById('authPageUserName');
@@ -2204,7 +2206,6 @@ async function handleAuthReset(event) {
     showToast('Password updated! You can now sign in.', 'success');
     openAuthScreen('login');
   }
-}
 }
 
 // ============================================================================
