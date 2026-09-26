@@ -45,6 +45,12 @@
           <option value="WH-EAST">East Coast Distribution</option>
         </select>
       </div>
+
+      <!-- Real-time Backend API Status Indicator -->
+      <div class="api-status-badge" id="apiStatusBadge" onclick="apiClient.syncFromBackend(false)" title="StockSense Backend API Status (Click to re-sync)">
+        <span class="api-status-dot online" id="apiStatusDot"></span>
+        <span id="apiStatusText">API: Connected</span>
+      </div>
     </div>
 
     <!-- Global Module Navigation Bar (Matching Diagram Header) -->
