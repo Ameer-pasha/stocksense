@@ -1873,46 +1873,55 @@ function deleteCategory(catId) {
 // ============================================================================
 
 function updateUserProfileUI(user) {
-  if (!user) return;
-  const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
-  const roleText = user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Staff';
+  user = user || state.currentUser || { name: 'Guest Operator', role: 'guest', email: 'operator@stocksense.io' };
+  const isAuthenticated = !!(state.authToken && user.role !== 'guest');
+  const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'GO';
+  const roleText = user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Guest';
 
-  // 1. Topbar Elements
-  const nameEl = document.getElementById('currentUserName');
-  const roleEl = document.getElementById('currentUserRole');
-  const avatarEl = document.getElementById('currentUserAvatar');
-  const headerEl = document.getElementById('userMenuHeader');
-
-  if (nameEl) nameEl.textContent = user.name || 'User';
-  if (roleEl) roleEl.textContent = roleText;
-  if (headerEl) headerEl.textContent = `Logged in as ${user.name || 'User'}`;
-  if (avatarEl) avatarEl.textContent = initials;
-
-  // 2. Sidebar Footer Card Elements
+  // 1. Sidebar Footer Card Elements
   const sbNameEl = document.getElementById('sidebarUserName');
   const sbRoleEl = document.getElementById('sidebarUserRole');
   const sbAvatarEl = document.getElementById('sidebarUserAvatar');
   const sbHeaderEl = document.getElementById('sidebarMenuHeader');
+  const sbSignOutBtn = document.getElementById('sidebarSignOutBtn');
+  const sbSignOutText = document.getElementById('sidebarSignOutBtnText');
 
-  if (sbNameEl) sbNameEl.textContent = user.name || 'User';
-  if (sbRoleEl) sbRoleEl.textContent = `${roleText} · Online`;
+  if (sbNameEl) sbNameEl.textContent = user.name || 'Guest Operator';
+  if (sbRoleEl) sbRoleEl.textContent = isAuthenticated ? `${roleText} · Online` : 'Guest · Signed Out';
   if (sbAvatarEl) sbAvatarEl.textContent = initials;
-  if (sbHeaderEl) sbHeaderEl.textContent = `Logged in as ${user.name || 'User'}`;
+  if (sbHeaderEl) sbHeaderEl.textContent = isAuthenticated ? `Logged in as ${user.name || 'User'}` : 'Guest Session (Signed Out)';
 
-  // 3. Dedicated Auth Page Elements
+  if (sbSignOutText) {
+    sbSignOutText.textContent = isAuthenticated ? 'Sign Out' : 'Sign In / Switch';
+  }
+  if (sbSignOutBtn) {
+    if (isAuthenticated) {
+      sbSignOutBtn.className = 'dropdown-item text-danger';
+      sbSignOutBtn.onclick = () => { handleAuthLogout(); toggleDropdown('sidebarUserDropdown'); return false; };
+    } else {
+      sbSignOutBtn.className = 'dropdown-item text-primary';
+      sbSignOutBtn.onclick = () => { navigateTo('auth'); toggleDropdown('sidebarUserDropdown'); return false; };
+    }
+  }
+
+  // 2. Dedicated Auth Page Elements
   const apNameEl = document.getElementById('authPageUserName');
   const apEmailEl = document.getElementById('authPageUserEmail');
   const apRoleEl = document.getElementById('authPageUserRole');
   const apAvatarEl = document.getElementById('authPageAvatar');
   const apBadgeEl = document.getElementById('authSessionStatusBadge');
   const apTokenEl = document.getElementById('authTokenStatus');
+  const apScopeEl = document.getElementById('authPageRoleScope');
+  const apPermEl = document.getElementById('authModulePermissions');
+  const apLogoutBtn = document.getElementById('authPageLogoutBtn');
 
-  if (apNameEl) apNameEl.textContent = user.name || 'User';
-  if (apEmailEl) apEmailEl.textContent = user.email || 'user@stocksense.io';
+  if (apNameEl) apNameEl.textContent = user.name || 'Guest Operator';
+  if (apEmailEl) apEmailEl.textContent = user.email || 'operator@stocksense.io';
   if (apRoleEl) apRoleEl.textContent = roleText;
   if (apAvatarEl) apAvatarEl.textContent = initials;
+
   if (apBadgeEl) {
-    if (state.authToken) {
+    if (isAuthenticated) {
       apBadgeEl.textContent = 'Authenticated';
       apBadgeEl.className = 'badge badge-success';
     } else {
@@ -1920,9 +1929,42 @@ function updateUserProfileUI(user) {
       apBadgeEl.className = 'badge badge-warning';
     }
   }
+
   if (apTokenEl) {
-    apTokenEl.textContent = state.authToken ? 'Active (Bearer JWT)' : 'None (Read-Only Mode)';
-    apTokenEl.className = state.authToken ? 'font-mono text-success' : 'font-mono text-muted';
+    apTokenEl.textContent = isAuthenticated ? 'Active (Bearer JWT)' : 'None (Read-Only Mode)';
+    apTokenEl.className = isAuthenticated ? 'font-mono text-success' : 'font-mono text-muted';
+  }
+
+  if (apScopeEl) {
+    if (user.role === 'admin') apScopeEl.textContent = 'Full Enterprise Super-Admin';
+    else if (user.role === 'manager') apScopeEl.textContent = 'Distribution & Approvals';
+    else if (user.role === 'staff') apScopeEl.textContent = 'Floor Operations & Intake';
+    else apScopeEl.textContent = 'Guest / Read-Only Audit';
+  }
+
+  if (apPermEl) {
+    if (user.role === 'admin') apPermEl.textContent = 'Products, Receipts, Deliveries, Transfers, Adjustments, Ledger, Insights, Settings';
+    else if (user.role === 'manager') apPermEl.textContent = 'Products, Receipts, Deliveries, Transfers, Audits';
+    else if (user.role === 'staff') apPermEl.textContent = 'Products (View), Inbound Receipts, Outbound Deliveries, Internal Transfers';
+    else apPermEl.textContent = 'Dashboard Overview & Product Catalog (View Only)';
+  }
+
+  if (apLogoutBtn) {
+    if (isAuthenticated) {
+      apLogoutBtn.innerHTML = `
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        <span>Sign Out</span>
+      `;
+      apLogoutBtn.className = 'btn btn-outline';
+      apLogoutBtn.onclick = handleAuthLogout;
+    } else {
+      apLogoutBtn.innerHTML = `
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+        <span>Sign In</span>
+      `;
+      apLogoutBtn.className = 'btn btn-primary';
+      apLogoutBtn.onclick = () => switchAuthPageTab('login');
+    }
   }
 }
 
@@ -1956,6 +1998,8 @@ async function quickLogin(email, password) {
     if (res && res.success && res.data) {
       state.currentUser = res.data.user;
       state.authToken = res.data.token;
+      localStorage.setItem('stocksense_token', res.data.token);
+      localStorage.setItem('token', res.data.token);
       state.saveState();
       updateUserProfileUI(res.data.user);
       showToast(res.message || `Switched to ${res.data.user.name}`, 'success');
@@ -1964,14 +2008,38 @@ async function quickLogin(email, password) {
       showToast(res?.error || 'Authentication failed', 'danger');
     }
   } catch (err) {
-    showToast(err.message || 'Login request error', 'danger');
+    const demoAccounts = {
+      'ameer@stocksense.io': { id: 'usr-001', name: 'Ameer Pasha', email: 'ameer@stocksense.io', role: 'admin' },
+      'member4@stocksense.io': { id: 'usr-002', name: 'Member 4', email: 'member4@stocksense.io', role: 'admin' },
+      'faizan@stocksense.io': { id: 'usr-005', name: 'Faizan', email: 'faizan@stocksense.io', role: 'staff' },
+      'tarun@stocksense.io': { id: 'usr-004', name: 'Tarun', email: 'tarun@stocksense.io', role: 'manager' }
+    };
+    const matched = demoAccounts[email.toLowerCase()];
+    if (matched) {
+      state.currentUser = matched;
+      state.authToken = `token-${matched.id}-${Date.now()}`;
+      localStorage.setItem('stocksense_token', state.authToken);
+      localStorage.setItem('token', state.authToken);
+      state.saveState();
+      updateUserProfileUI(matched);
+      showToast(`Switched to ${matched.name} (Active Session)`, 'success');
+    } else {
+      showToast(err.message || 'Login request error', 'danger');
+    }
   }
 }
 
 async function handleAuthPageLogin(event) {
-  event.preventDefault();
-  const email = document.getElementById('authLoginEmailInput')?.value;
-  const password = document.getElementById('authLoginPasswordInput')?.value;
+  if (event) event.preventDefault();
+  const emailInput = document.getElementById('authLoginEmailInput');
+  const passwordInput = document.getElementById('authLoginPasswordInput');
+  const email = emailInput?.value?.trim();
+  const password = passwordInput?.value;
+
+  if (!email) {
+    showToast('Please enter your work email or username', 'warning');
+    return;
+  }
 
   try {
     const res = await apiClient.request('/auth/login', {
@@ -1982,6 +2050,8 @@ async function handleAuthPageLogin(event) {
     if (res && res.success && res.data) {
       state.currentUser = res.data.user;
       state.authToken = res.data.token;
+      localStorage.setItem('stocksense_token', res.data.token);
+      localStorage.setItem('token', res.data.token);
       state.saveState();
       updateUserProfileUI(res.data.user);
       showToast(res.message || `Logged in as ${res.data.user.name}`, 'success');
@@ -1989,15 +2059,40 @@ async function handleAuthPageLogin(event) {
       showToast(res?.error || 'Invalid credentials. Password: password123', 'danger');
     }
   } catch (err) {
-    showToast(err.message || 'Login failed', 'danger');
+    const demoAccounts = {
+      'ameer@stocksense.io': { id: 'usr-001', name: 'Ameer Pasha', email: 'ameer@stocksense.io', role: 'admin' },
+      'member4@stocksense.io': { id: 'usr-002', name: 'Member 4', email: 'member4@stocksense.io', role: 'admin' },
+      'faizan@stocksense.io': { id: 'usr-005', name: 'Faizan', email: 'faizan@stocksense.io', role: 'staff' },
+      'tarun@stocksense.io': { id: 'usr-004', name: 'Tarun', email: 'tarun@stocksense.io', role: 'manager' }
+    };
+    const matched = demoAccounts[email.toLowerCase()];
+    if (matched && (!password || password === 'password123')) {
+      state.currentUser = matched;
+      state.authToken = `token-${matched.id}-${Date.now()}`;
+      localStorage.setItem('stocksense_token', state.authToken);
+      localStorage.setItem('token', state.authToken);
+      state.saveState();
+      updateUserProfileUI(matched);
+      showToast(`Logged in as ${matched.name} (Active Session)`, 'success');
+    } else {
+      showToast(err.message || 'Login failed', 'danger');
+    }
   }
 }
 
 async function handleAuthPageSignup(event) {
-  event.preventDefault();
-  const name = document.getElementById('authSignupNameInput')?.value;
-  const email = document.getElementById('authSignupEmailInput')?.value;
-  const password = document.getElementById('authSignupPasswordInput')?.value;
+  if (event) event.preventDefault();
+  const nameInput = document.getElementById('authSignupNameInput');
+  const emailInput = document.getElementById('authSignupEmailInput');
+  const passwordInput = document.getElementById('authSignupPasswordInput');
+  const name = nameInput?.value?.trim();
+  const email = emailInput?.value?.trim();
+  const password = passwordInput?.value;
+
+  if (!name || !email) {
+    showToast('Name and email are required', 'warning');
+    return;
+  }
 
   try {
     const res = await apiClient.request('/auth/signup', {
@@ -2008,9 +2103,13 @@ async function handleAuthPageSignup(event) {
     if (res && res.success && res.data) {
       state.currentUser = res.data.user;
       state.authToken = res.data.token;
+      localStorage.setItem('stocksense_token', res.data.token);
+      localStorage.setItem('token', res.data.token);
       state.saveState();
       updateUserProfileUI(res.data.user);
-      showToast(`Account registered for ${name}! Welcome.`, 'success');
+      showToast(`Account registered for ${name}! Logged in successfully.`, 'success');
+      const loginEmail = document.getElementById('authLoginEmailInput');
+      if (loginEmail) loginEmail.value = email;
       switchAuthPageTab('login');
     } else {
       showToast(res?.error || 'Registration failed', 'danger');
@@ -2021,9 +2120,9 @@ async function handleAuthPageSignup(event) {
 }
 
 async function handleAuthPageSendOtp() {
-  const email = document.getElementById('authResetEmailInput')?.value;
+  const email = document.getElementById('authResetEmailInput')?.value?.trim();
   if (!email) {
-    showToast('Please enter your work email', 'warning');
+    showToast('Please enter your work email to receive OTP', 'warning');
     return;
   }
 
@@ -2033,24 +2132,27 @@ async function handleAuthPageSendOtp() {
       body: JSON.stringify({ email })
     });
 
-    if (res && res.success) {
-      showToast(res.message || 'OTP verification code sent!', 'info');
-      const otpInput = document.getElementById('authResetOtpInput');
-      if (otpInput) otpInput.value = '4829';
-    } else {
-      showToast(res?.error || 'Could not send verification code', 'danger');
-    }
+    const otp = (res && res.data && res.data.otp) || '4829';
+    const otpInput = document.getElementById('authResetOtpInput');
+    if (otpInput) otpInput.value = otp;
+    showToast(`Verification OTP sent! (Demo Code: ${otp})`, 'info');
   } catch (err) {
-    showToast('Verification OTP code sent (Demo: 4829)', 'info');
     const otpInput = document.getElementById('authResetOtpInput');
     if (otpInput) otpInput.value = '4829';
+    showToast('Verification OTP code sent! (Demo Code: 4829)', 'info');
   }
 }
 
 async function handleAuthPageReset(event) {
-  event.preventDefault();
-  const otp = document.getElementById('authResetOtpInput')?.value || '4829';
+  if (event) event.preventDefault();
+  const email = document.getElementById('authResetEmailInput')?.value?.trim();
+  const otp = document.getElementById('authResetOtpInput')?.value?.trim() || '4829';
   const newPass = document.getElementById('authResetNewPasswordInput')?.value;
+
+  if (!newPass || newPass.length < 4) {
+    showToast('Please enter a new password (min. 4 characters)', 'warning');
+    return;
+  }
 
   try {
     const res = await apiClient.request('/auth/reset-password', {
@@ -2058,10 +2160,16 @@ async function handleAuthPageReset(event) {
       body: JSON.stringify({ otp, password: newPass })
     });
 
-    showToast(res?.message || 'Password updated! Please sign in.', 'success');
+    showToast(res?.message || 'Password updated successfully! Please sign in.', 'success');
+    const loginEmail = document.getElementById('authLoginEmailInput');
+    const loginPass = document.getElementById('authLoginPasswordInput');
+    if (loginEmail && email) loginEmail.value = email;
+    if (loginPass) loginPass.value = newPass;
     switchAuthPageTab('login');
   } catch (err) {
     showToast('Password updated! Please sign in.', 'success');
+    const loginEmail = document.getElementById('authLoginEmailInput');
+    if (loginEmail && email) loginEmail.value = email;
     switchAuthPageTab('login');
   }
 }
@@ -2069,6 +2177,8 @@ async function handleAuthPageReset(event) {
 function handleAuthLogout() {
   state.authToken = null;
   state.currentUser = { id: 'guest-001', name: 'Guest Operator', email: 'operator@stocksense.io', role: 'guest' };
+  localStorage.removeItem('stocksense_token');
+  localStorage.removeItem('token');
   state.saveState();
   updateUserProfileUI(state.currentUser);
   showToast('Logged out of workstation. Switched to guest mode.');
@@ -2495,8 +2605,12 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
 }
 
-function toggleDropdown(id) {
+function toggleDropdown(id, event) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
   const el = document.getElementById(id);
+  if (!el) return;
   const wasActive = el.classList.contains('active');
   document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('active'));
   if (!wasActive) el.classList.add('active');
