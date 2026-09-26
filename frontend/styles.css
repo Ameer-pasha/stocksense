@@ -229,6 +229,65 @@ body.desktop-app {
   gap: 12px;
 }
 
+/* Real-time Backend API Status Indicator */
+.api-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  color: var(--text-main);
+}
+
+.api-status-badge:hover {
+  border-color: var(--primary);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.api-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.api-status-dot.online {
+  background-color: var(--success);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite;
+}
+
+.api-status-dot.offline {
+  background-color: var(--warning);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+.api-status-dot.syncing {
+  background-color: var(--primary);
+  animation: pulse-blue 1s infinite;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+@keyframes pulse-blue {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
 .search-command-bar {
   display: flex;
   align-items: center;

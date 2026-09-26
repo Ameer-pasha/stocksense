@@ -428,6 +428,130 @@ class AppState {
 
 const state = new AppState();
 
+// ============================================================================
+// 2.5. BACKEND REST API CLIENT & REAL-TIME RECONCILIATION
+// ============================================================================
+
+const API_BASE_URL = localStorage.getItem('stocksense_api_url') || 'http://localhost:5000/api';
+
+const apiClient = {
+  baseUrl: API_BASE_URL,
+  isOnline: false,
+
+  async request(endpoint, options = {}) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), options.timeout || 3500);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(options.headers || {})
+      };
+
+      const token = localStorage.getItem('stocksense_token') || localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        console.warn(`[StockSense API] ${options.method || 'GET'} ${endpoint} returned status ${res.status}`);
+        return null;
+      }
+      return await res.json();
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async checkHealth() {
+    const data = await this.request('/health', { timeout: 2000 });
+    this.isOnline = !!(data && data.status === 'ok');
+    updateApiStatusBadge(this.isOnline);
+    return this.isOnline;
+  },
+
+  async syncFromBackend(silent = false) {
+    if (!silent) updateApiStatusBadge('syncing');
+    const isOnline = await this.checkHealth();
+    if (!isOnline) {
+      if (!silent) showToast('Backend API is offline (localhost:5000). Running in local mode.');
+      return false;
+    }
+
+    try {
+      const [prodRes, whRes, catRes, adjRes, recRes, delRes, trfRes, alertRes, histRes] = await Promise.all([
+        this.request('/products'),
+        this.request('/warehouses'),
+        this.request('/categories'),
+        this.request('/adjustments'),
+        this.request('/receipts'),
+        this.request('/deliveries'),
+        this.request('/transfers'),
+        this.request('/alerts'),
+        this.request('/history')
+      ]);
+
+      if (prodRes && prodRes.data && prodRes.data.length > 0) state.products = prodRes.data;
+      if (whRes && whRes.data && whRes.data.length > 0) state.warehouses = whRes.data;
+      if (catRes && catRes.data && catRes.data.length > 0) state.categories = catRes.data;
+      if (adjRes && adjRes.data && adjRes.data.length > 0) state.adjustments = adjRes.data;
+      if (recRes && recRes.data && recRes.data.length > 0) state.receipts = recRes.data;
+      if (delRes && delRes.data && delRes.data.length > 0) state.deliveries = delRes.data;
+      if (trfRes && trfRes.data && trfRes.data.length > 0) state.transfers = trfRes.data;
+      if (histRes && histRes.data && histRes.data.length > 0) state.history = histRes.data;
+      if (alertRes && alertRes.data && alertRes.data.length > 0) {
+        state.notifications = alertRes.data.map((a, i) => ({
+          id: i + 1,
+          title: a.title,
+          desc: a.desc,
+          time: a.time || 'Live',
+          type: a.type || 'warning'
+        }));
+      }
+
+      state.saveState();
+      populateCategorySelects();
+      populateWarehouseFilter();
+      renderAllViews();
+      renderNotifications();
+      if (!silent) showToast('Synchronized with StockSense Backend API!');
+      return true;
+    } catch (err) {
+      console.warn('[StockSense Sync Error]', err);
+      return false;
+    }
+  }
+};
+
+function updateApiStatusBadge(status) {
+  const badge = document.getElementById('apiStatusBadge');
+  const dot = document.getElementById('apiStatusDot');
+  const text = document.getElementById('apiStatusText');
+  if (!badge || !dot || !text) return;
+
+  if (status === 'syncing') {
+    dot.className = 'api-status-dot syncing';
+    text.textContent = 'API: Syncing...';
+    badge.title = 'Connecting to backend API...';
+  } else if (status === true) {
+    dot.className = 'api-status-dot online';
+    text.textContent = 'API: Connected';
+    badge.title = `Connected to StockSense Backend API (${apiClient.baseUrl}) - Click to re-sync`;
+  } else {
+    dot.className = 'api-status-dot offline';
+    text.textContent = 'API: Offline (Local)';
+    badge.title = `Backend server not reachable at ${apiClient.baseUrl} - Running in offline local storage mode. Click to retry connection.`;
+  }
+}
+
 // Global Charts instances
 let stockTrendsChart = null;
 let inventoryDonutChart = null;
@@ -445,6 +569,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initCharts();
   renderNotifications();
   setupKeyboardShortcuts();
+
+  // Auto-connect to backend API silently on startup
+  apiClient.syncFromBackend(true);
 
   // Close dropdowns when clicking outside
   document.addEventListener('click', (e) => {
@@ -983,6 +1110,12 @@ function saveProduct(event) {
       p.cost = cost;
       p.description = desc;
       showToast(`Product ${name} updated successfully!`);
+
+      // Backend sync
+      apiClient.request(`/products/${editId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name, sku, category, warehouse, stock, minStock, price, cost, description: desc })
+      });
     }
   } else {
     // Create new
@@ -1014,10 +1147,16 @@ function saveProduct(event) {
       path: `Initial Stock Registry → ${warehouse}`,
       delta: `+${stock} units`,
       balance: `${stock} units`,
-      user: 'Ameer Pasha'
+      user: 'Tarun'
     });
 
     showToast(`New SKU ${sku} activated successfully!`);
+
+    // Backend sync
+    apiClient.request('/products', {
+      method: 'POST',
+      body: JSON.stringify(newProduct)
+    });
   }
 
   state.saveState();
@@ -1049,6 +1188,11 @@ function deleteProduct(productId) {
     state.saveState();
     renderAllViews();
     showToast('Product removed.');
+
+    // Backend sync
+    apiClient.request(`/products/${productId}`, {
+      method: 'DELETE'
+    });
   }
 }
 
@@ -1190,6 +1334,12 @@ function createReceipt(event, forcedStatus = null) {
   closeModal('newReceiptModal');
   renderAllViews();
   showToast(forcedStatus === 'Draft' ? 'Receipt saved as Draft.' : `Stock received and ${totalQty} units added to ${warehouse}!`);
+
+  // Backend sync
+  apiClient.request('/receipts', {
+    method: 'POST',
+    body: JSON.stringify(receipt)
+  });
 }
 
 function validateReceiptDirect(receiptId) {
@@ -1218,6 +1368,12 @@ function validateReceiptDirect(receiptId) {
   state.saveState();
   renderAllViews();
   showToast(`Receipt ${receiptId} validated. Stock updated!`);
+
+  // Backend sync
+  apiClient.request(`/receipts/${receiptId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status: 'Done' })
+  });
 }
 
 // Outbound Delivery Orders Engine
@@ -1306,6 +1462,12 @@ function createDelivery(event) {
   closeModal('newDeliveryModal');
   renderAllViews();
   showToast(`Delivery Order ${delCode} shipped to ${customer}!`);
+
+  // Backend sync
+  apiClient.request('/deliveries', {
+    method: 'POST',
+    body: JSON.stringify(delivery)
+  });
 }
 
 function validateDeliveryDirect(delId) {
@@ -1315,6 +1477,12 @@ function validateDeliveryDirect(delId) {
   state.saveState();
   renderAllViews();
   showToast(`Order ${delId} marked as shipped!`);
+
+  // Backend sync
+  apiClient.request(`/deliveries/${delId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status: 'Done' })
+  });
 }
 
 // Internal Warehouse Transfers Engine
@@ -1393,6 +1561,12 @@ function createTransfer(event) {
   closeModal('newTransferModal');
   renderAllViews();
   showToast(`Transfer ${trfId} dispatched from ${source} to ${dest}!`);
+
+  // Backend sync
+  apiClient.request('/transfers', {
+    method: 'POST',
+    body: JSON.stringify(transfer)
+  });
 }
 
 function completeTransferDirect(trfId) {
@@ -1419,6 +1593,12 @@ function completeTransferDirect(trfId) {
     state.saveState();
     renderAllViews();
     showToast(`Transfer ${trfId} received at ${t.dest}!`);
+
+    // Backend sync
+    apiClient.request(`/transfers/${trfId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'Completed' })
+    });
   }
 }
 
@@ -1481,7 +1661,7 @@ function createAdjustment(event) {
     realStock: realStock,
     delta: delta,
     reason: reason,
-    auditor: 'Ameer Pasha',
+    auditor: 'Tarun (Auditor)',
     date: formatNow()
   };
 
@@ -1496,13 +1676,24 @@ function createAdjustment(event) {
     path: `${wh} (Cycle Audit)`,
     delta: `${delta > 0 ? '+' + delta : delta} units`,
     balance: `${realStock} units`,
-    user: 'Ameer Pasha'
+    user: 'Tarun (Auditor)'
   });
 
   state.saveState();
   closeModal('newAdjustmentModal');
   renderAllViews();
   showToast(`Adjustment ${adjId} recorded and stock reconciled!`);
+
+  // Backend sync
+  apiClient.request('/adjustments', {
+    method: 'POST',
+    body: JSON.stringify({
+      productId: prod.id,
+      realStock,
+      reason,
+      auditor: 'Tarun (Auditor)'
+    })
+  });
 }
 
 // Categories Management
@@ -1543,6 +1734,12 @@ function addCategory(event) {
   renderCategoryManager();
   document.getElementById('catNameInput').value = '';
   showToast(`Category "${name}" added.`);
+
+  // Backend sync
+  apiClient.request('/categories', {
+    method: 'POST',
+    body: JSON.stringify(newCat)
+  });
 }
 
 function deleteCategory(catId) {
@@ -1551,6 +1748,11 @@ function deleteCategory(catId) {
   populateCategorySelects();
   renderCategoryManager();
   showToast('Category deleted.');
+
+  // Backend sync
+  apiClient.request(`/categories/${catId}`, {
+    method: 'DELETE'
+  });
 }
 
 // ============================================================================
