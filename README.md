@@ -1,16 +1,42 @@
-# React + Vite
+# stocksense
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Modular Inventory Management System for real-time product, warehouse, stock
+movement, receipts, deliveries, transfers, and inventory adjustments.
 
-Currently, two official plugins are available:
+Built for the Odoo x GCET Virtual Round hackathon.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Repository layout
 
-## React Compiler
+```
+backend/    Node.js + Express + MongoDB API
+frontend/   React app (coming from the frontend team)
+docs/       API documentation
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Backend (current)
 
-## Expanding the Oxlint configuration
+```bash
+cd backend
+npm install
+cp .env.example .env      # set MONGODB_URI (local or Atlas)
+npm run dev               # API on http://localhost:5000/api
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+| Command | Description |
+| ------- | ----------- |
+| `npm run dev` | API with auto-reload |
+| `npm start` | API in production mode |
+| `npm run seed` | load demo data (warehouses, products, stock, a draft transfer) |
+| `npm test` | smoke test - 47 assertions, runs fully offline |
+
+Endpoint reference: [`backend/docs/API_DOCUMENTATION.md`](backend/docs/API_DOCUMENTATION.md)
+Setup, architecture and integration notes: [`backend/README.md`](backend/README.md)
+
+### Modules
+
+| Module | Owner |
+| ------ | ----- |
+| Warehouses, Internal Transfers, Stock Ledger, Stock Adjustments, Alerts, Search, Reports | Ameer |
+| Auth, Products, Receipts, Deliveries, Dashboard KPIs | Prince |
+| Authentication UI, Dashboard, Navigation | Faizan |
+| Products UI, Stock Adjustments UI, Alerts UI | Tarun |
