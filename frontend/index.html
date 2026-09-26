@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockSense - Enterprise Desktop Inventory Management System</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js CDN for Analytics & Sparklines -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="desktop-app">
+  <!-- Top App Window Bar (Desktop Titlebar Style) -->
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <div class="brand-logo" onclick="navigateTo('dashboard')">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">StockSense</span>
+          <span class="brand-tagline">Inventory Management System</span>
+        </div>
+      </div>
+
+      <!-- Quick Warehouse Scope Selector -->
+      <div class="warehouse-scope-selector">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        <select id="globalWarehouseFilter" onchange="handleWarehouseChange(this.value)">
+          <option value="ALL">All Warehouses (Global)</option>
+          <option value="WH-MAIN">Main Warehouse HQ</option>
+          <option value="WH-NORTH">North Logistics Hub</option>
+          <option value="WH-SOUTH">South Depot & Cold Storage</option>
+          <option value="WH-EAST">East Coast Distribution</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Global Module Navigation Bar (Matching Diagram Header) -->
+    <nav class="top-nav-tabs">
+      <button class="nav-tab active" data-view="dashboard" onclick="navigateTo('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Dashboard</span>
+      </button>
+
+      <button class="nav-tab" data-view="products" onclick="navigateTo('products')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <span>Products</span>
+      </button>
+
+      <button class="nav-tab" data-view="warehouses" onclick="navigateTo('warehouses')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span>Warehouses</span>
+      </button>
+
+      <button class="nav-tab" data-view="receipts" onclick="navigateTo('receipts')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path></svg>
+        <span>Receipts</span>
+      </button>
+
+      <button class="nav-tab" data-view="deliveries" onclick="navigateTo('deliveries')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+        <span>Delivery Orders</span>
+      </button>
+
+      <button class="nav-tab" data-view="transfers" onclick="navigateTo('transfers')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        <span>Transfers</span>
+      </button>
+
+      <button class="nav-tab" data-view="adjustments" onclick="navigateTo('adjustments')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+        <span>Adjustments</span>
+      </button>
+
+      <button class="nav-tab" data-view="history" onclick="navigateTo('history')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Stock History</span>
+      </button>
+
+      <button class="nav-tab" data-view="insights" onclick="navigateTo('insights')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Insights</span>
+      </button>
+    </nav>
+
+    <!-- Topbar Right Actions -->
+    <div class="topbar-right">
+      <!-- Global Search Shortcut Bar -->
+      <div class="search-command-bar" onclick="openCommandPalette()">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span class="search-hint">Search items, orders, transfers...</span>
+        <kbd class="kbd-badge">Ctrl K</kbd>
+      </div>
+
+      <!-- Quick Action Floating Button -->
+      <div class="dropdown-wrapper">
+        <button class="btn btn-primary btn-sm quick-add-btn" onclick="toggleDropdown('quickCreateDropdown')">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>New</span>
+        </button>
+        <div id="quickCreateDropdown" class="dropdown-menu dropdown-right">
+          <div class="dropdown-header">Quick Create</div>
+          <a href="#" onclick="openModal('addProductModal'); return false;" class="dropdown-item">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+            <span>Add New Product</span>
+          </a>
+          <a href="#" onclick="openModal('newReceiptModal'); return false;" class="dropdown-item">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Inbound Receipt</span>
+          </a>
+          <a href="#" onclick="openModal('newDeliveryModal'); return false;" class="dropdown-item">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon></svg>
+            <span>Delivery Order</span>
+          </a>
+          <a href="#" onclick="openModal('newTransferModal'); return false;" class="dropdown-item">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline></svg>
+            <span>Internal Transfer</span>
+          </a>
+          <a href="#" onclick="openModal('newAdjustmentModal'); return false;" class="dropdown-item">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+            <span>Stock Adjustment</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Live Notifications / Alerts Bell -->
+      <div class="dropdown-wrapper">
+        <button class="icon-btn" onclick="toggleDropdown('notificationsDropdown')" title="Notifications & Alerts">
+          <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="notification-badge" id="notifBadgeCount">3</span>
+        </button>
+        <div id="notificationsDropdown" class="dropdown-menu dropdown-right notif-menu">
+          <div class="dropdown-header flex-between">
+            <span>System Alerts</span>
+            <span class="badge badge-danger">Live Stream</span>
+          </div>
+          <div class="notif-list" id="notifListContainer">
+            <!-- Dynamically injected -->
+          </div>
+          <div class="dropdown-footer">
+            <button class="btn-link" onclick="navigateTo('history')">View Audit Ledger</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Theme Switcher (Dark / Light) -->
+      <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark / Light Mode">
+        <svg class="icon-md sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+
+      <!-- Mobile Layout Visualizer Popup Trigger (Screen 25 in Diagram) -->
+      <button class="icon-btn mobile-preview-btn" onclick="openModal('mobilePreviewModal')" title="View Responsive Mobile Companion Mockup (Wireframe #25)">
+        <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+      </button>
+
+      <!-- User Profile Menu -->
+      <div class="dropdown-wrapper">
+        <div class="user-pill" onclick="toggleDropdown('userMenuDropdown')">
+          <div class="avatar-circle">M4</div>
+          <div class="user-meta">
+            <span class="user-name">Member 4</span>
+            <span class="user-role">Dashboard & Intelligence</span>
+          </div>
+          <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div id="userMenuDropdown" class="dropdown-menu dropdown-right">
+          <div class="dropdown-header">Logged in as Member 4</div>
+          <a href="#" onclick="openAuthModal('login'); return false;" class="dropdown-item">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            <span>Switch / View Auth Screens (1-6)</span>
+          </a>
+          <a href="#" onclick="openModal('settingsModal'); return false;" class="dropdown-item">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>System Settings & Alerts</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" onclick="resetDemoData(); return false;" class="dropdown-item text-warning">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Reset Demo Data</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport Shell -->
+  <main class="app-viewport">
+
+    <!-- ======================================================== -->
+    <!-- VIEW 1: OPERATIONS & ANALYTICS / MAIN DASHBOARD (Screen 7) -->
+    <!-- Member 4: Core Ownership Module                           -->
+    <!-- ======================================================== -->
+    <section id="view-dashboard" class="app-view active">
+      <!-- Dashboard Top Header -->
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Operations & Inventory Analytics</h1>
+          <p class="view-subtitle">Real-time telemetry, stock velocity, warehouse allocation & inbound/outbound health.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="exportFullInventoryReport()">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Export Report</span>
+          </button>
+          <button class="btn btn-primary" onclick="openModal('addProductModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Add Product</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Stat Cards Grid (Screen 7 wireframe) -->
+      <div class="kpi-grid">
+        <!-- Card 1: Total Stock -->
+        <div class="kpi-card" onclick="navigateTo('products')">
+          <div class="kpi-icon-wrapper bg-blue-subtle">
+            <svg class="icon-lg text-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Total Stock Items</span>
+            <div class="kpi-value" id="kpiTotalStock">1,248</div>
+            <div class="kpi-meta text-success">
+              <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+              <span>+12.4% vs last week</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Low Stock Alert -->
+        <div class="kpi-card" onclick="navigateTo('products', {filterStatus: 'LOW_STOCK'})">
+          <div class="kpi-icon-wrapper bg-amber-subtle">
+            <svg class="icon-lg text-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Low Stock Warnings</span>
+            <div class="kpi-value text-amber" id="kpiLowStock">72</div>
+            <div class="kpi-meta text-amber">
+              <span>Threshold breached</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Out of Stock -->
+        <div class="kpi-card" onclick="navigateTo('products', {filterStatus: 'OUT_OF_STOCK'})">
+          <div class="kpi-icon-wrapper bg-red-subtle">
+            <svg class="icon-lg text-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Out of Stock</span>
+            <div class="kpi-value text-red" id="kpiOutOfStock">2</div>
+            <div class="kpi-meta text-red">
+              <span>Urgent replenishment</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Inbound Receipts Pending -->
+        <div class="kpi-card" onclick="navigateTo('receipts')">
+          <div class="kpi-icon-wrapper bg-purple-subtle">
+            <svg class="icon-lg text-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Inbound Pending</span>
+            <div class="kpi-value" id="kpiInboundPending">3</div>
+            <div class="kpi-meta text-muted">
+              <span>Dock receiving scheduled</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Deliveries Ready -->
+        <div class="kpi-card" onclick="navigateTo('deliveries')">
+          <div class="kpi-icon-wrapper bg-cyan-subtle">
+            <svg class="icon-lg text-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><rect x="1" y="3" width="15" height="13"></rect><circle cx="5.5" cy="18.5" r="2.5"></circle></svg>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Outbound Dispatches</span>
+            <div class="kpi-value" id="kpiOutbound">8</div>
+            <div class="kpi-meta text-success">
+              <span>Pick & pack verified</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6: Total Valuation -->
+        <div class="kpi-card" onclick="navigateTo('insights')">
+          <div class="kpi-icon-wrapper bg-emerald-subtle">
+            <svg class="icon-lg text-emerald" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Stock Valuation</span>
+            <div class="kpi-value" id="kpiTotalValuation">$184,950</div>
+            <div class="kpi-meta text-success">
+              <span>Active inventory asset</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Analytics Row: Flow Trends Chart + Inventory Donut Breakdown + Insights Sidebar -->
+      <div class="dashboard-analytics-grid">
+        <!-- Sparkline / Trend Inflow & Outflow Chart -->
+        <div class="card chart-card">
+          <div class="card-header flex-between">
+            <div class="chart-header-left">
+              <h3 class="card-title">Stock Velocity & Movement Trends</h3>
+              <p class="card-subtitle">Inflow (Purchases) vs Outflow (Sales/Dispatches) & Net Balance</p>
+            </div>
+            <div class="pill-toggle-group">
+              <button class="pill-btn active" onclick="updateSparklineRange('7d', this)">7D</button>
+              <button class="pill-btn" onclick="updateSparklineRange('30d', this)">30D</button>
+              <button class="pill-btn" onclick="updateSparklineRange('90d', this)">90D</button>
+            </div>
+          </div>
+          <div class="chart-container" style="height: 280px;">
+            <canvas id="stockTrendsChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Donut Distribution Chart -->
+        <div class="card donut-card">
+          <div class="card-header">
+            <h3 class="card-title">Inventory by Category</h3>
+            <p class="card-subtitle">SKU & Value Distribution</p>
+          </div>
+          <div class="donut-chart-container" style="height: 210px; position: relative;">
+            <canvas id="inventoryDonutChart"></canvas>
+            <div class="donut-center-stat">
+              <span class="stat-number" id="donutTotalCount">1,248</span>
+              <span class="stat-label">Units</span>
+            </div>
+          </div>
+          <div class="category-legend-list" id="categoryLegendList">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- Side Insights Widget (Screen 7 right sidebar) -->
+        <div class="card insights-sidebar-card">
+          <div class="card-header flex-between">
+            <h3 class="card-title">Smart Insights</h3>
+            <span class="badge badge-primary">AI Telemetry</span>
+          </div>
+          <div class="insights-list">
+            <div class="insight-item warning">
+              <div class="insight-icon">⚠️</div>
+              <div class="insight-body">
+                <span class="insight-title">Reorder Threshold Reached</span>
+                <p class="insight-text"><strong>Roxon 290 Bearings</strong> is at 12 units (Safety min: 25). Estimated stockout in 3 days.</p>
+                <button class="btn btn-xs btn-amber" onclick="openReorderModal('PRD-000103')">Reorder Now</button>
+              </div>
+            </div>
+
+            <div class="insight-item success">
+              <div class="insight-icon">⚡</div>
+              <div class="insight-body">
+                <span class="insight-title">Fast Moving Item</span>
+                <p class="insight-text"><strong>Solar Sensor V3</strong> turnover is +42% faster this week. High outbound demand.</p>
+              </div>
+            </div>
+
+            <div class="insight-item info">
+              <div class="insight-icon">🏢</div>
+              <div class="insight-body">
+                <span class="insight-title">Warehouse Allocation</span>
+                <p class="insight-text">Main Warehouse is at <strong>88% capacity</strong>. Consider internal transfer to East Depot.</p>
+                <button class="btn btn-xs btn-outline" onclick="openModal('newTransferModal')">Initiate Transfer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Movements / Quick Ledger Stream -->
+      <div class="card recent-table-card">
+        <div class="card-header flex-between">
+          <div>
+            <h3 class="card-title">Recent Inventory Operations</h3>
+            <p class="card-subtitle">Live stream of incoming receipts, shipments and stock transfers</p>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="navigateTo('history')">View All Ledger Logs →</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Reference #</th>
+                <th>Operation</th>
+                <th>Product / Details</th>
+                <th>Warehouse Route</th>
+                <th>Quantity</th>
+                <th>Timestamp</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardRecentTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: PRODUCTS CATALOG (Screens 8, 9, 10, 11)           -->
+    <!-- ======================================================== -->
+    <section id="view-products" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Products & Inventory Catalog</h1>
+          <p class="view-subtitle">Manage SKUs, physical stock levels, reorder thresholds, barcodes and pricing.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="openModal('categoryModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <span>Manage Categories</span>
+          </button>
+          <button class="btn btn-primary" onclick="openModal('addProductModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Add Product</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="toolbar-card card">
+        <div class="toolbar-left">
+          <div class="search-input-wrapper">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="productSearchInput" placeholder="Search by name, SKU, or scan barcode..." oninput="filterProducts()">
+          </div>
+
+          <div class="select-filter">
+            <label>Category:</label>
+            <select id="productCategoryFilter" onchange="filterProducts()">
+              <option value="ALL">All Categories</option>
+            </select>
+          </div>
+
+          <div class="select-filter">
+            <label>Stock Status:</label>
+            <select id="productStatusFilter" onchange="filterProducts()">
+              <option value="ALL">All Statuses</option>
+              <option value="IN_STOCK">In Stock</option>
+              <option value="LOW_STOCK">Low Stock Alert</option>
+              <option value="OUT_OF_STOCK">Out of Stock</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <span class="items-count-badge" id="productCountBadge">Showing 8 Products</span>
+          <button class="btn btn-sm btn-outline" onclick="exportProductsCSV()" title="Export to CSV">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Products Table (Screen 8) -->
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th width="40"><input type="checkbox" id="selectAllProductsCheckbox"></th>
+                <th>Product & SKU</th>
+                <th>Category</th>
+                <th>Warehouse & Bin</th>
+                <th>Stock Level</th>
+                <th>Unit Price</th>
+                <th>Total Value</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody">
+              <!-- Injected by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 3: WAREHOUSES & LOCATIONS (Screen 12)                 -->
+    <!-- ======================================================== -->
+    <section id="view-warehouses" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Warehouse Hubs & Locations</h1>
+          <p class="view-subtitle">Physical warehouse facilities, storage zones, aisle bins and capacity metrics.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('addWarehouseModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Add Warehouse</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="warehouse-cards-grid" id="warehousesGrid">
+        <!-- Rendered by app.js -->
+      </div>
+
+      <!-- Detailed Location Bin Matrix -->
+      <div class="card mt-4">
+        <div class="card-header flex-between">
+          <h3 class="card-title">Zone & Bin Storage Matrix</h3>
+          <span class="badge badge-neutral">4 Active Hubs</span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Location / Zone Code</th>
+                <th>Warehouse Facility</th>
+                <th>Total Stored SKUs</th>
+                <th>Occupied Capacity</th>
+                <th>Status</th>
+                <th>Manager</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="warehouseLocationsTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 4: INBOUND RECEIPTS (Screens 13, 14, 15)              -->
+    <!-- ======================================================== -->
+    <section id="view-receipts" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Inbound Receipts (Purchase Inflow)</h1>
+          <p class="view-subtitle">Manage purchase receipts, vendor shipments, quality inspection and stock put-away.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('newReceiptModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ New Receipt</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-card card">
+        <div class="toolbar-left">
+          <div class="search-input-wrapper">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="receiptSearchInput" placeholder="Search receipt ref, vendor, PO#..." oninput="filterReceipts()">
+          </div>
+          <div class="select-filter">
+            <label>Status:</label>
+            <select id="receiptStatusFilter" onchange="filterReceipts()">
+              <option value="ALL">All Statuses</option>
+              <option value="Draft">Draft</option>
+              <option value="Ready">Ready for Inbound</option>
+              <option value="Done">Received / Done</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <span class="items-count-badge" id="receiptsCountBadge">3 Receipts</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Receipt #</th>
+                <th>Supplier / Vendor</th>
+                <th>Destination Warehouse</th>
+                <th>Scheduled Date</th>
+                <th>Items Count</th>
+                <th>Total Value</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="receiptsTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 5: DELIVERY ORDERS (Screens 16, 17)                   -->
+    <!-- ======================================================== -->
+    <section id="view-deliveries" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Delivery Orders (Outbound Dispatches)</h1>
+          <p class="view-subtitle">Customer shipments, packing slips, dispatch tracking and warehouse picking.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('newDeliveryModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ New Delivery Order</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-card card">
+        <div class="toolbar-left">
+          <div class="search-input-wrapper">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="deliverySearchInput" placeholder="Search order #, customer..." oninput="filterDeliveries()">
+          </div>
+          <div class="select-filter">
+            <label>Status:</label>
+            <select id="deliveryStatusFilter" onchange="filterDeliveries()">
+              <option value="ALL">All Statuses</option>
+              <option value="Draft">Draft</option>
+              <option value="Packing">Picking & Packing</option>
+              <option value="Done">Shipped / Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <span class="items-count-badge" id="deliveriesCountBadge">4 Orders</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer / Destination</th>
+                <th>Source Warehouse</th>
+                <th>Scheduled Date</th>
+                <th>Items Dispatched</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="deliveriesTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 6: INTERNAL TRANSFERS (Screens 18, 19, 20)           -->
+    <!-- ======================================================== -->
+    <section id="view-transfers" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Internal Warehouse Transfers</h1>
+          <p class="view-subtitle">Inter-facility transfers, transit tracking, stock rebalancing between locations.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('newTransferModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ New Internal Transfer</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-card card">
+        <div class="toolbar-left">
+          <div class="search-input-wrapper">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="transferSearchInput" placeholder="Search transfer #, source, destination..." oninput="filterTransfers()">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Transfer #</th>
+                <th>Source Facility</th>
+                <th>Destination Hub</th>
+                <th>Product & Qty</th>
+                <th>Initiated Date</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="transfersTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 7: STOCK ADJUSTMENTS (Screen 21)                     -->
+    <!-- ======================================================== -->
+    <section id="view-adjustments" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Physical Stock Adjustments</h1>
+          <p class="view-subtitle">Physical cycle count audits, write-offs, shrinkage, found items and discrepancy reconciliation.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('newAdjustmentModal')">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Record Adjustment</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header flex-between">
+          <h3 class="card-title">Stock Count Adjustment History</h3>
+          <span class="badge badge-neutral">Audit Controlled</span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Adjustment ID</th>
+                <th>Product</th>
+                <th>Warehouse</th>
+                <th>System Stock</th>
+                <th>Counted Real Stock</th>
+                <th>Difference (Delta)</th>
+                <th>Reason / Note</th>
+                <th>Auditor</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="adjustmentsTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 8: STOCK HISTORY / AUDIT TRAIL (Screen 22)           -->
+    <!-- ======================================================== -->
+    <section id="view-history" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Stock History & Immutable Audit Ledger</h1>
+          <p class="view-subtitle">Complete chronological trace of all inventory transactions, transfers, receipts and edits.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="exportAuditLedgerCSV()">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-card card">
+        <div class="toolbar-left">
+          <div class="search-input-wrapper">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="historySearchInput" placeholder="Filter by product, reference, user..." oninput="filterHistory()">
+          </div>
+          <div class="select-filter">
+            <label>Type:</label>
+            <select id="historyTypeFilter" onchange="filterHistory()">
+              <option value="ALL">All Operations</option>
+              <option value="RECEIPT">Inbound Receipts</option>
+              <option value="DELIVERY">Outbound Deliveries</option>
+              <option value="TRANSFER">Internal Transfers</option>
+              <option value="ADJUSTMENT">Stock Adjustments</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar-right">
+          <span class="items-count-badge" id="historyCountBadge">Logs Recorded</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Operation Type</th>
+                <th>Reference #</th>
+                <th>Product SKU & Name</th>
+                <th>Movement Path</th>
+                <th>Delta Change</th>
+                <th>Balance After</th>
+                <th>Operator</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ======================================================== -->
+    <!-- VIEW 9: INSIGHTS & ADVANCED ANALYTICS (Screen 23, 24)     -->
+    <!-- Member 4: Core Ownership Module                           -->
+    <!-- ======================================================== -->
+    <section id="view-insights" class="app-view">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Insights, Forecasting & Health Metrics</h1>
+          <p class="view-subtitle">Deep intelligence on inventory turnover, holding costs, dead stock, and reorder projections.</p>
+        </div>
+      </div>
+
+      <div class="analytics-grid-two">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">ABC Analysis & SKU Classification</h3>
+            <p class="card-subtitle">80/20 Rule: High-value revenue drivers vs slow-movers</p>
+          </div>
+          <div class="abc-table-wrap">
+            <div class="abc-pill-row">
+              <span class="badge badge-primary">Class A (Top 70% Value) - 3 SKUs</span>
+              <span class="badge badge-neutral">Class B (20% Value) - 3 SKUs</span>
+              <span class="badge badge-amber">Class C (10% Value) - 2 SKUs</span>
+            </div>
+            <table class="data-table mt-3">
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Product</th>
+                  <th>Share of Value</th>
+                  <th>Turnover Frequency</th>
+                  <th>Strategy</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-primary">Class A</span></td>
+                  <td><strong>Precision Steel Bearings</strong></td>
+                  <td>38.5%</td>
+                  <td>High (Weekly)</td>
+                  <td>Tight safety stock, JIT replenishment</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-primary">Class A</span></td>
+                  <td><strong>Solar Sensor V3</strong></td>
+                  <td>28.2%</td>
+                  <td>High (Bi-weekly)</td>
+                  <td>Maintain priority supplier contracts</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-neutral">Class B</span></td>
+                  <td><strong>Industrial Valve 400</strong></td>
+                  <td>14.1%</td>
+                  <td>Moderate (Monthly)</td>
+                  <td>Standard buffer stock</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-amber">Class C</span></td>
+                  <td><strong>Aluminum Rack Brackets</strong></td>
+                  <td>4.2%</td>
+                  <td>Low (Quarterly)</td>
+                  <td>Bulk reorder discount</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Stockout Risk & Reorder Lead Time Projection</h3>
+            <p class="card-subtitle">Predictive burn rate based on recent outbound shipments</p>
+          </div>
+          <div class="chart-container" style="height: 260px;">
+            <canvas id="burnRateChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+
+  <!-- ======================================================== -->
+  <!-- MODALS & SLIDE-OVERS (Pixel-Perfect Matching Wireframes) -->
+  <!-- ======================================================== -->
+
+  <!-- 1. ADD / EDIT PRODUCT MODAL (Screen 9) -->
+  <div id="addProductModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header flex-between">
+        <div>
+          <h2 class="modal-title" id="productModalTitle">Add New Product SKU</h2>
+          <p class="modal-subtitle">Enter SKU specifications, warehouse allocation, safety stock limits and pricing.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('addProductModal')">&times;</button>
+      </div>
+      <form id="productForm" onsubmit="saveProduct(event)">
+        <input type="hidden" id="editProductId" value="">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Product Name <span class="text-red">*</span></label>
+            <input type="text" id="pName" placeholder="e.g. Industrial Sensor Module" required>
+          </div>
+          <div class="form-group">
+            <label>SKU / Barcode Code <span class="text-red">*</span></label>
+            <div class="input-with-action">
+              <input type="text" id="pSku" placeholder="e.g. PRD-90082" required>
+              <button type="button" class="btn btn-xs btn-outline" onclick="generateRandomSKU()">Generate</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Category <span class="text-red">*</span></label>
+            <select id="pCategory" required>
+              <!-- JS Populated -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Assigned Warehouse Location <span class="text-red">*</span></label>
+            <select id="pWarehouse" required>
+              <option value="WH-MAIN">Main Warehouse HQ (Zone A)</option>
+              <option value="WH-NORTH">North Logistics Hub (Zone B)</option>
+              <option value="WH-SOUTH">South Depot (Zone C)</option>
+              <option value="WH-EAST">East Coast Distribution (Zone D)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Current Stock Quantity <span class="text-red">*</span></label>
+            <input type="number" id="pStock" min="0" value="50" required>
+          </div>
+          <div class="form-group">
+            <label>Minimum Safety Stock Alert Level <span class="text-red">*</span></label>
+            <input type="number" id="pMinStock" min="1" value="15" required>
+          </div>
+          <div class="form-group">
+            <label>Unit Selling Price ($)</label>
+            <input type="number" id="pPrice" step="0.01" value="120.00" required>
+          </div>
+          <div class="form-group">
+            <label>Unit Cost Price ($)</label>
+            <input type="number" id="pCost" step="0.01" value="75.00" required>
+          </div>
+          <div class="form-group full-width">
+            <label>Item Description & Notes</label>
+            <textarea id="pDesc" rows="2" placeholder="Specifications, dimensions, bin placement notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer flex-between">
+          <button type="button" class="btn btn-outline" onclick="closeModal('addProductModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveProductBtn">Save & Activate Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- 2. PRODUCT DETAIL VIEW MODAL (Screen 10) -->
+  <div id="productDetailModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header flex-between">
+        <div>
+          <div class="flex-align-center gap-2">
+            <h2 class="modal-title" id="detailProductName">Product Profile</h2>
+            <span id="detailProductStatusBadge" class="badge badge-success">In Stock</span>
+          </div>
+          <p class="modal-subtitle" id="detailProductSku">SKU: PRD-000000</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('productDetailModal')">&times;</button>
+      </div>
+      <div class="product-detail-body">
+        <!-- Metric Cards Row -->
+        <div class="product-metric-cards-grid">
+          <div class="mini-stat-card">
+            <span class="label">On Hand Stock</span>
+            <span class="val text-blue" id="detailStockQty">150 units</span>
+          </div>
+          <div class="mini-stat-card">
+            <span class="label">Safety Threshold</span>
+            <span class="val text-amber" id="detailMinStock">20 units</span>
+          </div>
+          <div class="mini-stat-card">
+            <span class="label">Unit Price</span>
+            <span class="val" id="detailUnitPrice">$450.00</span>
+          </div>
+          <div class="mini-stat-card">
+            <span class="label">Total Stock Value</span>
+            <span class="val text-emerald" id="detailTotalValuation">$67,500</span>
+          </div>
+        </div>
+
+        <div class="detail-specs-grid mt-3">
+          <div class="spec-row">
+            <span class="spec-name">Category:</span>
+            <span class="spec-val" id="detailCategory">Electronics</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-name">Storage Hub:</span>
+            <span class="spec-val" id="detailWarehouse">Main Warehouse HQ</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-name">Estimated Lead Time:</span>
+            <span class="spec-val">2 business days</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-name">Barcode Standard:</span>
+            <span class="spec-val font-mono" id="detailBarcode">EAN-13: 890124789012</span>
+          </div>
+        </div>
+
+        <div class="detail-history-box mt-3">
+          <h4 class="box-title">Recent Stock Movement for this SKU</h4>
+          <div class="table-responsive">
+            <table class="data-table data-table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Ref #</th>
+                  <th>Delta</th>
+                  <th>New Balance</th>
+                </tr>
+              </thead>
+              <tbody id="detailMovementHistoryBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn btn-outline" onclick="printBarcodeLabel()">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Print Barcode / Spec Sheet</span>
+        </button>
+        <button type="button" class="btn btn-primary" onclick="closeModal('productDetailModal')">Close View</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 3. NEW INBOUND RECEIPT MODAL (Screen 14) -->
+  <div id="newReceiptModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header flex-between">
+        <div>
+          <h2 class="modal-title">Create Inbound Purchase Receipt</h2>
+          <p class="modal-subtitle">Receive stock from vendors and automatically increase warehouse inventory.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('newReceiptModal')">&times;</button>
+      </div>
+      <form id="receiptForm" onsubmit="createReceipt(event)">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Vendor / Supplier Name <span class="text-red">*</span></label>
+            <input type="text" id="recSupplier" placeholder="e.g. Apex Global Components Ltd." required>
+          </div>
+          <div class="form-group">
+            <label>Receipt Reference Code</label>
+            <input type="text" id="recCode" readonly class="font-mono">
+          </div>
+          <div class="form-group">
+            <label>Destination Warehouse <span class="text-red">*</span></label>
+            <select id="recWarehouse" required>
+              <option value="WH-MAIN">Main Warehouse HQ</option>
+              <option value="WH-NORTH">North Logistics Hub</option>
+              <option value="WH-SOUTH">South Depot</option>
+              <option value="WH-EAST">East Coast Distribution</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Scheduled Delivery Date <span class="text-red">*</span></label>
+            <input type="date" id="recDate" required>
+          </div>
+        </div>
+
+        <div class="line-items-wrapper mt-3">
+          <div class="flex-between mb-2">
+            <label class="form-label-bold">Receipt Line Items (Products to Receive)</label>
+            <button type="button" class="btn btn-xs btn-outline" onclick="addReceiptLineItem()">+ Add Item Row</button>
+          </div>
+          <div id="receiptLineItemsContainer">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <div class="modal-footer flex-between mt-4">
+          <button type="button" class="btn btn-outline" onclick="closeModal('newReceiptModal')">Cancel</button>
+          <div class="flex-gap-2">
+            <button type="button" class="btn btn-outline" onclick="createReceipt(event, 'Draft')">Save as Draft</button>
+            <button type="submit" class="btn btn-primary">Validate & Receive Stock Now</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- 4. NEW DELIVERY ORDER MODAL (Screen 17) -->
+  <div id="newDeliveryModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header flex-between">
+        <div>
+          <h2 class="modal-title">Create Delivery Dispatch Order</h2>
+          <p class="modal-subtitle">Pick, pack and ship items to customers while deducting warehouse inventory.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('newDeliveryModal')">&times;</button>
+      </div>
+      <form id="deliveryForm" onsubmit="createDelivery(event)">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Customer / Destination Client <span class="text-red">*</span></label>
+            <input type="text" id="delCustomer" placeholder="e.g. Tesla Energy Operations" required>
+          </div>
+          <div class="form-group">
+            <label>Order Reference Code</label>
+            <input type="text" id="delCode" readonly class="font-mono">
+          </div>
+          <div class="form-group">
+            <label>Dispatch From Warehouse <span class="text-red">*</span></label>
+            <select id="delWarehouse" required>
+              <option value="WH-MAIN">Main Warehouse HQ</option>
+              <option value="WH-NORTH">North Logistics Hub</option>
+              <option value="WH-SOUTH">South Depot</option>
+              <option value="WH-EAST">East Coast Distribution</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Dispatch Date <span class="text-red">*</span></label>
+            <input type="date" id="delDate" required>
+          </div>
+        </div>
+
+        <div class="line-items-wrapper mt-3">
+          <div class="flex-between mb-2">
+            <label class="form-label-bold">Dispatched Line Items</label>
+            <button type="button" class="btn btn-xs btn-outline" onclick="addDeliveryLineItem()">+ Add Item Row</button>
+          </div>
+          <div id="deliveryLineItemsContainer">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <div class="modal-footer flex-between mt-4">
+          <button type="button" class="btn btn-outline" onclick="closeModal('newDeliveryModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Validate & Ship Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- 5. NEW INTERNAL TRANSFER MODAL (Screen 19) -->
+  <div id="newTransferModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header flex-between">
+        <div>
+          <h2 class="modal-title">Initiate Internal Transfer</h2>
+          <p class="modal-subtitle">Transfer stock safely between company warehouse facilities.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('newTransferModal')">&times;</button>
+      </div>
+      <form id="transferForm" onsubmit="createTransfer(event)">
+        <div class="form-group">
+          <label>Source Warehouse (Origin) <span class="text-red">*</span></label>
+          <select id="trfSource" required onchange="updateTransferProductList()">
+            <option value="WH-MAIN">Main Warehouse HQ</option>
+            <option value="WH-NORTH">North Logistics Hub</option>
+            <option value="WH-SOUTH">South Depot</option>
+            <option value="WH-EAST">East Coast Distribution</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Destination Warehouse <span class="text-red">*</span></label>
+          <select id="trfDest" required>
+            <option value="WH-NORTH">North Logistics Hub</option>
+            <option value="WH-MAIN">Main Warehouse HQ</option>
+            <option value="WH-SOUTH">South Depot</option>
+            <option value="WH-EAST">East Coast Distribution</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Select Product to Transfer <span class="text-red">*</span></label>
+          <select id="trfProduct" required onchange="updateTransferAvailableStock()">
+            <!-- Populated via JS -->
+          </select>
+          <small class="form-hint" id="trfAvailableStockHint">Available in Origin: 150 units</small>
+        </div>
+        <div class="form-group">
+          <label>Transfer Quantity <span class="text-red">*</span></label>
+          <input type="number" id="trfQty" min="1" value="10" required>
+        </div>
+        <div class="form-group">
+          <label>Transfer Reason / Note</label>
+          <input type="text" id="trfReason" placeholder="e.g. Stock rebalancing for peak Q4 demand">
+        </div>
+        <div class="modal-footer flex-between">
+          <button type="button" class="btn btn-outline" onclick="closeModal('newTransferModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm & Dispatch Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- 6. NEW STOCK ADJUSTMENT MODAL (Screen 21) -->
+  <div id="newAdjustmentModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header flex-between">
+        <div>
+          <h2 class="modal-title">Record Physical Stock Adjustment</h2>
+          <p class="modal-subtitle">Reconcile physical inventory counts against recorded system numbers.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('newAdjustmentModal')">&times;</button>
+      </div>
+      <form id="adjustmentForm" onsubmit="createAdjustment(event)">
+        <div class="form-group">
+          <label>Warehouse Facility <span class="text-red">*</span></label>
+          <select id="adjWarehouse" required onchange="updateAdjustmentProductList()">
+            <option value="WH-MAIN">Main Warehouse HQ</option>
+            <option value="WH-NORTH">North Logistics Hub</option>
+            <option value="WH-SOUTH">South Depot</option>
+            <option value="WH-EAST">East Coast Distribution</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Product Item <span class="text-red">*</span></label>
+          <select id="adjProduct" required onchange="handleAdjustmentProductSelect()">
+            <!-- JS populated -->
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Current System Stock</label>
+            <input type="number" id="adjSystemQty" readonly class="bg-disabled">
+          </div>
+          <div class="form-group">
+            <label>Real Counted Stock <span class="text-red">*</span></label>
+            <input type="number" id="adjRealQty" min="0" required oninput="calculateAdjustmentDelta()">
+          </div>
+        </div>
+        <div class="adjustment-delta-box" id="adjDeltaDisplay">
+          Discrepancy: <span class="font-bold">0 units</span>
+        </div>
+        <div class="form-group mt-2">
+          <label>Adjustment Reason <span class="text-red">*</span></label>
+          <select id="adjReason" required>
+            <option value="Routine Cycle Count Audit">Routine Cycle Count Audit</option>
+            <option value="Damaged Goods Write-off">Damaged Goods Write-off</option>
+            <option value="Shrinkage / Lost Units">Shrinkage / Lost Units</option>
+            <option value="Found Unrecorded Stock">Found Unrecorded Stock</option>
+            <option value="Supplier Return Correction">Supplier Return Correction</option>
+          </select>
+        </div>
+        <div class="modal-footer flex-between">
+          <button type="button" class="btn btn-outline" onclick="closeModal('newAdjustmentModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Apply Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- 7. MANAGE CATEGORIES MODAL (Screen 11) -->
+  <div id="categoryModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header flex-between">
+        <div>
+          <h2 class="modal-title">Inventory Categories</h2>
+          <p class="modal-subtitle">Organize products into hierarchical classification groups.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('categoryModal')">&times;</button>
+      </div>
+      <div class="category-manager-body">
+        <form id="newCategoryForm" onsubmit="addCategory(event)" class="inline-add-form mb-3">
+          <input type="text" id="catNameInput" placeholder="New category name..." required>
+          <button type="submit" class="btn btn-primary btn-sm">+ Add</button>
+        </form>
+        <div class="category-list" id="categoryManagerList">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <span></span>
+        <button type="button" class="btn btn-primary" onclick="closeModal('categoryModal')">Done</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 8. SETTINGS & ACCESS CONTROL MODAL (Screen 23, 24) -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal-card modal-lg">
+      <div class="modal-header flex-between">
+        <div>
+          <h2 class="modal-title">System Settings & Alert Configuration</h2>
+          <p class="modal-subtitle">Configure notification triggers, company thresholds, and role access.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('settingsModal')">&times;</button>
+      </div>
+      <div class="settings-grid-layout">
+        <div class="settings-section">
+          <h4 class="section-title">Automated Alerts & Telemetry</h4>
+          <div class="toggle-row">
+            <div>
+              <span class="toggle-title">Low Stock Email Warnings</span>
+              <p class="toggle-desc">Send immediate alert when SKU breaches safety minimums.</p>
+            </div>
+            <input type="checkbox" checked class="custom-switch">
+          </div>
+          <div class="toggle-row">
+            <div>
+              <span class="toggle-title">Inbound Inspection Notifications</span>
+              <p class="toggle-desc">Notify warehouse floor upon carrier dock arrival.</p>
+            </div>
+            <input type="checkbox" checked class="custom-switch">
+          </div>
+          <div class="toggle-row">
+            <div>
+              <span class="toggle-title">Daily Stock Ledger Snapshot</span>
+              <p class="toggle-desc">Archive daily CSV audit logs automatically at 00:00 UTC.</p>
+            </div>
+            <input type="checkbox" class="custom-switch">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4 class="section-title">User Access & Permissions</h4>
+          <div class="user-access-list">
+            <div class="user-access-item flex-between">
+              <div>
+                <strong>Ameer Pasha</strong>
+                <div class="text-muted text-xs">Member 1: Core Backend & Inventory Engine</div>
+              </div>
+              <span class="badge badge-primary">Super Admin</span>
+            </div>
+            <div class="user-access-item flex-between">
+              <div>
+                <strong>Prince</strong>
+                <div class="text-muted text-xs">Member 2: Products & Warehouses</div>
+              </div>
+              <span class="badge badge-neutral">Inventory Manager</span>
+            </div>
+            <div class="user-access-item flex-between">
+              <div>
+                <strong>Faizan</strong>
+                <div class="text-muted text-xs">Member 3: Inventory Operations</div>
+              </div>
+              <span class="badge badge-neutral">Operations Specialist</span>
+            </div>
+            <div class="user-access-item flex-between">
+              <div>
+                <strong>Member 4</strong> (Active Profile)
+                <div class="text-muted text-xs">Frontend, Dashboard & Intelligence</div>
+              </div>
+              <span class="badge badge-success">Lead Frontend</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn btn-outline" onclick="closeModal('settingsModal')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="showToast('Settings saved successfully!'); closeModal('settingsModal');">Save Preferences</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 9. AUTHENTICATION SCREENS OVERLAY (Screens 1 to 6 in Diagram) -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-card auth-modal-card">
+      <button class="modal-close-btn auth-close-x" onclick="closeModal('authModal')">&times;</button>
+      
+      <!-- SUB-SCREEN 1: SPLASH SCREEN (Screen 1) -->
+      <div id="authScreen-splash" class="auth-subscreen">
+        <div class="auth-hero-header">
+          <div class="auth-logo-badge">
+            <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <h2 class="auth-hero-title">StockSense</h2>
+          <p class="auth-hero-subtitle">Inventory Management System</p>
+        </div>
+        <div class="auth-features-list">
+          <div class="feature-item">
+            <span class="check-icon">✓</span>
+            <span>Real-time Multi-Warehouse Tracking</span>
+          </div>
+          <div class="feature-item">
+            <span class="check-icon">✓</span>
+            <span>Automated Safety Stock & Reorder Alerts</span>
+          </div>
+          <div class="feature-item">
+            <span class="check-icon">✓</span>
+            <span>Inbound Receipts & Outbound Shipments</span>
+          </div>
+          <div class="feature-item">
+            <span class="check-icon">✓</span>
+            <span>Immutable Audit Trail & Ledger Logging</span>
+          </div>
+        </div>
+        <div class="auth-btn-row">
+          <button class="btn btn-primary btn-block btn-lg" onclick="openAuthScreen('login')">Get Started / Sign In</button>
+        </div>
+      </div>
+
+      <!-- SUB-SCREEN 2: LOGIN (Screen 2) -->
+      <div id="authScreen-login" class="auth-subscreen" style="display: none;">
+        <h2 class="auth-title">Welcome Back</h2>
+        <p class="auth-subtitle">Sign in to your StockSense desktop workstation.</p>
+        <form onsubmit="handleAuthLogin(event)">
+          <div class="form-group">
+            <label>Username or Work Email</label>
+            <input type="text" id="loginEmail" value="member4@stocksense.io" required>
+          </div>
+          <div class="form-group">
+            <div class="flex-between">
+              <label>Password</label>
+              <a href="#" class="auth-link-sm" onclick="openAuthScreen('forgot'); return false;">Forgot Password?</a>
+            </div>
+            <input type="password" id="loginPassword" value="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg mt-3">Sign In to Workstation</button>
+        </form>
+        <div class="auth-divider"><span>OR</span></div>
+        <button class="btn btn-outline btn-block" onclick="showToast('Authenticated as Member 4 (Frontend Lead)'); closeModal('authModal');">
+          Continue with Google SSO
+        </button>
+        <p class="auth-footer-text mt-3">
+          Don't have an account? <a href="#" onclick="openAuthScreen('signup'); return false;">Create Account</a>
+        </p>
+      </div>
+
+      <!-- SUB-SCREEN 3: SIGN UP (Screen 3) -->
+      <div id="authScreen-signup" class="auth-subscreen" style="display: none;">
+        <h2 class="auth-title">Create Account</h2>
+        <p class="auth-subtitle">Set up a new organization or warehouse operator account.</p>
+        <form onsubmit="handleAuthSignup(event)">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" placeholder="e.g. Member 4" required>
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="name@company.com" required>
+          </div>
+          <div class="form-group">
+            <label>Create Password</label>
+            <input type="password" placeholder="Min. 8 characters" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg mt-3">Sign Up</button>
+        </form>
+        <p class="auth-footer-text mt-3">
+          Already have an account? <a href="#" onclick="openAuthScreen('login'); return false;">Sign In</a>
+        </p>
+      </div>
+
+      <!-- SUB-SCREEN 4: FORGOT PASSWORD (Screen 4) -->
+      <div id="authScreen-forgot" class="auth-subscreen" style="display: none;">
+        <h2 class="auth-title">Reset Your Password</h2>
+        <p class="auth-subtitle">Enter your registered email to receive a 6-digit verification code.</p>
+        <form onsubmit="handleAuthForgot(event)">
+          <div class="form-group">
+            <label>Work Email</label>
+            <input type="email" id="forgotEmail" placeholder="name@company.com" value="member4@stocksense.io" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg mt-3">Send Verification Code</button>
+        </form>
+        <p class="auth-footer-text mt-3">
+          <a href="#" onclick="openAuthScreen('login'); return false;">← Back to Login</a>
+        </p>
+      </div>
+
+      <!-- SUB-SCREEN 5: OTP VERIFICATION (Screen 5) -->
+      <div id="authScreen-otp" class="auth-subscreen" style="display: none;">
+        <h2 class="auth-title">OTP Verification</h2>
+        <p class="auth-subtitle">Enter the 4-digit code sent to your email.</p>
+        <div class="otp-inputs-row">
+          <input type="text" maxlength="1" class="otp-box" value="4">
+          <input type="text" maxlength="1" class="otp-box" value="8">
+          <input type="text" maxlength="1" class="otp-box" value="2">
+          <input type="text" maxlength="1" class="otp-box" value="9">
+        </div>
+        <button type="button" class="btn btn-primary btn-block btn-lg mt-3" onclick="openAuthScreen('reset')">Verify & Continue</button>
+        <p class="auth-footer-text mt-3">
+          Didn't receive code? <a href="#" onclick="showToast('OTP resent to email!'); return false;">Resend Code (59s)</a>
+        </p>
+      </div>
+
+      <!-- SUB-SCREEN 6: RESET PASSWORD (Screen 6) -->
+      <div id="authScreen-reset" class="auth-subscreen" style="display: none;">
+        <h2 class="auth-title">Set New Password</h2>
+        <p class="auth-subtitle">Choose a secure password for your workspace.</p>
+        <form onsubmit="handleAuthReset(event)">
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" placeholder="••••••••" required>
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input type="password" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg mt-3">Reset Password Now</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 10. MOBILE COMPANION PREVIEW MODAL (Screen 25 in Diagram) -->
+  <div id="mobilePreviewModal" class="modal-overlay">
+    <div class="modal-card mobile-preview-card">
+      <div class="modal-header flex-between">
+        <div>
+          <h3 class="modal-title">Mobile Layout Companion (Wireframe #25)</h3>
+          <p class="modal-subtitle">Compact responsive layout for floor operators and scanner guns.</p>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('mobilePreviewModal')">&times;</button>
+      </div>
+      <div class="mobile-frame-container">
+        <!-- Phone Device Mockup 1: Dashboard -->
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="mobile-header">
+              <span class="mobile-brand">StockSense</span>
+              <div class="avatar-xs">M4</div>
+            </div>
+            <div class="mobile-kpi-row">
+              <div class="mobile-kpi-box bg-blue">
+                <span class="m-val">1,248</span>
+                <span class="m-lbl">Total Stock</span>
+              </div>
+              <div class="mobile-kpi-box bg-amber">
+                <span class="m-val">72</span>
+                <span class="m-lbl">Alerts</span>
+              </div>
+            </div>
+            <div class="mobile-sparkline-preview">
+              <span class="m-lbl-sm">Sparkline Velocity Trend</span>
+              <div class="mock-spark-bar"></div>
+            </div>
+            <div class="mobile-quick-actions">
+              <button class="m-btn" onclick="showToast('Barcode Scanner Activated on Mobile device');">📷 Scan Barcode</button>
+              <button class="m-btn" onclick="openModal('newReceiptModal'); closeModal('mobilePreviewModal');">+ Inbound</button>
+              <button class="m-btn" onclick="openModal('newDeliveryModal'); closeModal('mobilePreviewModal');">+ Outbound</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone Device Mockup 2: Stock Card -->
+        <div class="phone-mockup">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="mobile-header">
+              <span class="mobile-brand">Stock Detail</span>
+              <span class="badge badge-success">In Stock</span>
+            </div>
+            <div class="mobile-product-card">
+              <span class="m-prod-title">Precision Steel Bearings</span>
+              <span class="m-prod-sku">SKU: PRD-000103</span>
+              <div class="m-stat-big">1,340 kg</div>
+              <div class="m-badge-row">
+                <span class="badge badge-neutral">Zone A-04</span>
+                <span class="badge badge-primary">$1,490 Val</span>
+              </div>
+            </div>
+            <div class="mobile-action-list">
+              <button class="btn btn-primary btn-block btn-sm" onclick="openModal('newTransferModal'); closeModal('mobilePreviewModal');">Transfer SKU</button>
+              <button class="btn btn-outline btn-block btn-sm mt-1" onclick="openModal('newAdjustmentModal'); closeModal('mobilePreviewModal');">Cycle Count Audit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Global Command Palette (Ctrl + K) -->
+  <div id="commandPaletteModal" class="modal-overlay">
+    <div class="modal-card command-palette-card">
+      <div class="command-search-header">
+        <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="cmdInput" placeholder="Type a command or search product SKU, warehouse, action..." oninput="handleCommandSearch(this.value)">
+        <kbd class="kbd-badge">ESC to close</kbd>
+      </div>
+      <div class="command-results" id="cmdResultsList">
+        <!-- Filtered results -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Banner Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Main Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
