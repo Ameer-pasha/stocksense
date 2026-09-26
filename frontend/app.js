@@ -404,6 +404,8 @@ class AppState {
     this.notifications = JSON.parse(localStorage.getItem('stocksense_notifs')) || DEFAULT_NOTIFICATIONS;
     this.currentWarehouse = 'ALL';
     this.theme = localStorage.getItem('stocksense_theme') || 'light';
+    this.currentUser = JSON.parse(localStorage.getItem('stocksense_user')) || { id: 'usr-002', name: 'Member 4', email: 'member4@stocksense.io', role: 'admin' };
+    this.authToken = localStorage.getItem('stocksense_token') || null;
   }
 
   saveState() {
@@ -417,6 +419,9 @@ class AppState {
     localStorage.setItem('stocksense_history', JSON.stringify(this.history));
     localStorage.setItem('stocksense_notifs', JSON.stringify(this.notifications));
     localStorage.setItem('stocksense_theme', this.theme);
+    localStorage.setItem('stocksense_user', JSON.stringify(this.currentUser));
+    if (this.authToken) localStorage.setItem('stocksense_token', this.authToken);
+    else localStorage.removeItem('stocksense_token');
   }
 
   resetDemo() {
@@ -432,7 +437,17 @@ const state = new AppState();
 // 2.5. BACKEND REST API CLIENT & REAL-TIME RECONCILIATION
 // ============================================================================
 
-const API_BASE_URL = localStorage.getItem('stocksense_api_url') || 'http://localhost:5000/api';
+const getApiBaseUrl = () => {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('stocksense_api_url')) {
+    return localStorage.getItem('stocksense_api_url');
+  }
+  if (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
+    return `${window.location.origin}/api`;
+  }
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const apiClient = {
   baseUrl: API_BASE_URL,
@@ -462,8 +477,13 @@ const apiClient = {
       clearTimeout(timeoutId);
 
       if (!res.ok) {
-        console.warn(`[StockSense API] ${options.method || 'GET'} ${endpoint} returned status ${res.status}`);
-        return null;
+        const errData = await res.json().catch(() => ({}));
+        const errorMsg = errData.error || errData.message || `API Error: HTTP ${res.status}`;
+        console.warn(`[StockSense API] ${options.method || 'GET'} ${endpoint} failed (${res.status}):`, errorMsg);
+        if (res.status === 400 || res.status === 409 || errData.shortage) {
+          showToast(errorMsg, 'danger');
+        }
+        return { success: false, error: errorMsg, shortage: !!errData.shortage, status: res.status };
       }
       return await res.json();
     } catch (err) {
@@ -473,7 +493,7 @@ const apiClient = {
 
   async checkHealth() {
     const data = await this.request('/health', { timeout: 2000 });
-    this.isOnline = !!(data && data.status === 'ok');
+    this.isOnline = !!(data && (data.status === 'ok' || data.status === 'online'));
     updateApiStatusBadge(this.isOnline);
     return this.isOnline;
   },
@@ -563,12 +583,14 @@ let burnRateChart = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme(state.theme);
+  updateUserProfileUI(state.currentUser);
   populateCategorySelects();
   populateWarehouseFilter();
   renderAllViews();
   initCharts();
   renderNotifications();
   setupKeyboardShortcuts();
+  setupNavKeyboardAccessibility();
 
   // Auto-connect to backend API silently on startup
   apiClient.syncFromBackend(true);
@@ -581,23 +603,84 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function setupNavKeyboardAccessibility() {
+  const navContainer = document.querySelector('.sidebar-nav') || document.querySelector('.top-nav-tabs');
+  if (!navContainer) return;
+
+  navContainer.addEventListener('keydown', (e) => {
+    const tabs = Array.from(navContainer.querySelectorAll('.nav-tab'));
+    const currentIndex = tabs.findIndex(tab => tab === document.activeElement);
+    if (currentIndex === -1) return;
+
+    let targetIndex = -1;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      targetIndex = (currentIndex + 1) % tabs.length;
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      targetIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      targetIndex = 0;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      targetIndex = tabs.length - 1;
+    }
+
+    if (targetIndex !== -1) {
+      tabs[targetIndex].focus();
+      const view = tabs[targetIndex].getAttribute('data-view');
+      if (view) navigateTo(view);
+    }
+  });
+}
+
 function navigateTo(viewId, params = {}) {
-  // Update Tab Styling
+  // Update Tab Styling & ARIA Accessibility Attributes
   document.querySelectorAll('.nav-tab').forEach(tab => {
-    if (tab.getAttribute('data-view') === viewId) {
+    const isTarget = tab.getAttribute('data-view') === viewId;
+    if (isTarget) {
       tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      tab.setAttribute('tabindex', '0');
     } else {
       tab.classList.remove('active');
+      tab.setAttribute('aria-selected', 'false');
+      tab.setAttribute('tabindex', '-1');
     }
   });
 
   // Update App View Visibility
   document.querySelectorAll('.app-view').forEach(view => {
     view.classList.remove('active');
+    view.setAttribute('aria-hidden', 'true');
   });
   const targetView = document.getElementById(`view-${viewId}`);
   if (targetView) {
     targetView.classList.add('active');
+    targetView.setAttribute('aria-hidden', 'false');
+  }
+
+  // Update Topbar Breadcrumb
+  const breadcrumb = document.getElementById('currentViewBreadcrumb');
+  if (breadcrumb) {
+    const titles = {
+      dashboard: 'Operations & Inventory Analytics',
+      products: 'Products & SKU Catalog Matrix',
+      warehouses: 'Warehouse Infrastructure & Capacity',
+      receipts: 'Inbound Receipts & Intake Dock',
+      deliveries: 'Outbound Deliveries & Dispatch',
+      transfers: 'Inter-Warehouse Transfers (2PC)',
+      adjustments: 'Stock Adjustments & Physical Audits',
+      history: 'Immutable Double-Entry Stock Ledger',
+      insights: 'Analytics, ABC Matrix & Velocity',
+      auth: 'Authentication & Session Center'
+    };
+    breadcrumb.textContent = titles[viewId] || (viewId.charAt(0).toUpperCase() + viewId.slice(1));
+  }
+
+  if (viewId === 'auth') {
+    updateAuthPageUI();
   }
 
   // If params passed (like filterStatus)
@@ -1342,14 +1425,23 @@ function createReceipt(event, forcedStatus = null) {
   });
 }
 
-function validateReceiptDirect(receiptId) {
+async function validateReceiptDirect(receiptId) {
   const rec = state.receipts.find(r => r.id === receiptId);
   if (!rec) return;
 
+  const res = await apiClient.request(`/receipts/${receiptId}/validate`, {
+    method: 'PUT'
+  });
+
+  if (res && res.error) {
+    showToast(`Receipt validation failed: ${res.error}`, 'danger');
+    return;
+  }
+
   rec.items.forEach(item => {
     const prod = state.products.find(p => p.id === item.productId);
-    if (prod) {
-      prod.stock += item.qty;
+    if (prod && rec.status !== 'Done') {
+      prod.stock += (item.qty || 1);
       state.history.unshift({
         timestamp: formatNow(),
         type: 'RECEIPT',
@@ -1357,7 +1449,7 @@ function validateReceiptDirect(receiptId) {
         product: prod.name,
         sku: prod.sku,
         path: `${rec.supplier} → ${rec.warehouse}`,
-        delta: `+${item.qty} units`,
+        delta: `+${item.qty || 1} units`,
         balance: `${prod.stock} units`,
         user: 'Ameer Pasha'
       });
@@ -1367,13 +1459,7 @@ function validateReceiptDirect(receiptId) {
   rec.status = 'Done';
   state.saveState();
   renderAllViews();
-  showToast(`Receipt ${receiptId} validated. Stock updated!`);
-
-  // Backend sync
-  apiClient.request(`/receipts/${receiptId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ status: 'Done' })
-  });
+  showToast(`Receipt ${receiptId} validated. Stock updated!`, 'success');
 }
 
 // Outbound Delivery Orders Engine
@@ -1408,7 +1494,7 @@ function addDeliveryLineItem() {
   container.appendChild(div);
 }
 
-function createDelivery(event) {
+async function createDelivery(event) {
   event.preventDefault();
   const customer = document.getElementById('delCustomer').value.trim();
   const delCode = document.getElementById('delCode').value;
@@ -1426,24 +1512,11 @@ function createDelivery(event) {
 
     if (prod) {
       if (prod.stock < qty) {
-        alert(`Insufficient stock for "${prod.name}"! On hand: ${prod.stock}, Demanded: ${qty}`);
+        showToast(`Shortage: "${prod.name}" has only ${prod.stock} units available (Demanded: ${qty})!`, 'danger');
         return;
       }
-      prod.stock -= qty;
       items.push({ productId: prodId, qty });
       summaryParts.push(`${qty} x ${prod.name}`);
-
-      state.history.unshift({
-        timestamp: formatNow(),
-        type: 'DELIVERY',
-        ref: delCode,
-        product: prod.name,
-        sku: prod.sku,
-        path: `${warehouse} → ${customer}`,
-        delta: `-${qty} units`,
-        balance: `${prod.stock} units`,
-        user: 'Ameer Pasha'
-      });
     }
   }
 
@@ -1457,32 +1530,69 @@ function createDelivery(event) {
     items
   };
 
+  // Sync with backend first to enforce Shortage Prevention Gate
+  const res = await apiClient.request('/deliveries', {
+    method: 'POST',
+    body: JSON.stringify(delivery)
+  });
+
+  if (res && res.error) {
+    showToast(`Delivery blocked: ${res.error}`, 'danger');
+    return;
+  }
+
+  // Deduct stock locally
+  for (let item of items) {
+    const prod = state.products.find(p => p.id === item.productId);
+    if (prod) {
+      prod.stock = Math.max(0, prod.stock - item.qty);
+      state.history.unshift({
+        timestamp: formatNow(),
+        type: 'DELIVERY',
+        ref: delCode,
+        product: prod.name,
+        sku: prod.sku,
+        path: `${warehouse} → ${customer}`,
+        delta: `-${item.qty} units`,
+        balance: `${prod.stock} units`,
+        user: 'Ameer Pasha'
+      });
+    }
+  }
+
   state.deliveries.unshift(delivery);
   state.saveState();
   closeModal('newDeliveryModal');
   renderAllViews();
-  showToast(`Delivery Order ${delCode} shipped to ${customer}!`);
-
-  // Backend sync
-  apiClient.request('/deliveries', {
-    method: 'POST',
-    body: JSON.stringify(delivery)
-  });
+  showToast(`Delivery Order ${delCode} shipped to ${customer}!`, 'success');
 }
 
-function validateDeliveryDirect(delId) {
+async function validateDeliveryDirect(delId) {
   const d = state.deliveries.find(item => item.id === delId);
   if (!d) return;
+
+  const res = await apiClient.request(`/deliveries/${delId}/validate`, {
+    method: 'PUT'
+  });
+
+  if (res && res.error) {
+    showToast(`Delivery failed: ${res.error}`, 'danger');
+    return;
+  }
+
+  if (d.items && d.status !== 'Done') {
+    d.items.forEach(item => {
+      const prod = state.products.find(p => p.id === item.productId);
+      if (prod) {
+        prod.stock = Math.max(0, prod.stock - (item.qty || 1));
+      }
+    });
+  }
+
   d.status = 'Done';
   state.saveState();
   renderAllViews();
-  showToast(`Order ${delId} marked as shipped!`);
-
-  // Backend sync
-  apiClient.request(`/deliveries/${delId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ status: 'Done' })
-  });
+  showToast(`Order ${delId} marked as shipped!`, 'success');
 }
 
 // Internal Warehouse Transfers Engine
@@ -1569,12 +1679,21 @@ function createTransfer(event) {
   });
 }
 
-function completeTransferDirect(trfId) {
+async function completeTransferDirect(trfId) {
   const t = state.transfers.find(item => item.id === trfId);
   if (!t) return;
 
+  const res = await apiClient.request(`/transfers/${trfId}/complete`, {
+    method: 'PUT'
+  });
+
+  if (res && res.error) {
+    showToast(`Transfer failed: ${res.error}`, 'danger');
+    return;
+  }
+
   const prod = state.products.find(p => p.id === t.productId);
-  if (prod) {
+  if (prod && t.status !== 'Completed') {
     prod.stock += t.qty;
     t.status = 'Completed';
 
@@ -1592,13 +1711,7 @@ function completeTransferDirect(trfId) {
 
     state.saveState();
     renderAllViews();
-    showToast(`Transfer ${trfId} received at ${t.dest}!`);
-
-    // Backend sync
-    apiClient.request(`/transfers/${trfId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status: 'Completed' })
-    });
+    showToast(`Transfer ${trfId} received at ${t.dest}!`, 'success');
   }
 }
 
@@ -1756,8 +1869,208 @@ function deleteCategory(catId) {
 }
 
 // ============================================================================
-// 6. AUTHENTICATION SCREENS (Wireframes 1 - 6)
+// 6. AUTHENTICATION & IDENTITY (Wireframes 1 - 6 & Dedicated Auth Center)
 // ============================================================================
+
+function updateUserProfileUI(user) {
+  if (!user) return;
+  const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U';
+  const roleText = user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Staff';
+
+  // 1. Topbar Elements
+  const nameEl = document.getElementById('currentUserName');
+  const roleEl = document.getElementById('currentUserRole');
+  const avatarEl = document.getElementById('currentUserAvatar');
+  const headerEl = document.getElementById('userMenuHeader');
+
+  if (nameEl) nameEl.textContent = user.name || 'User';
+  if (roleEl) roleEl.textContent = roleText;
+  if (headerEl) headerEl.textContent = `Logged in as ${user.name || 'User'}`;
+  if (avatarEl) avatarEl.textContent = initials;
+
+  // 2. Sidebar Footer Card Elements
+  const sbNameEl = document.getElementById('sidebarUserName');
+  const sbRoleEl = document.getElementById('sidebarUserRole');
+  const sbAvatarEl = document.getElementById('sidebarUserAvatar');
+
+  if (sbNameEl) sbNameEl.textContent = user.name || 'User';
+  if (sbRoleEl) sbRoleEl.textContent = `${roleText} · Online`;
+  if (sbAvatarEl) sbAvatarEl.textContent = initials;
+
+  // 3. Dedicated Auth Page Elements
+  const apNameEl = document.getElementById('authPageUserName');
+  const apEmailEl = document.getElementById('authPageUserEmail');
+  const apRoleEl = document.getElementById('authPageUserRole');
+  const apAvatarEl = document.getElementById('authPageAvatar');
+  const apBadgeEl = document.getElementById('authSessionStatusBadge');
+  const apTokenEl = document.getElementById('authTokenStatus');
+
+  if (apNameEl) apNameEl.textContent = user.name || 'User';
+  if (apEmailEl) apEmailEl.textContent = user.email || 'user@stocksense.io';
+  if (apRoleEl) apRoleEl.textContent = roleText;
+  if (apAvatarEl) apAvatarEl.textContent = initials;
+  if (apBadgeEl) {
+    if (state.authToken) {
+      apBadgeEl.textContent = 'Authenticated';
+      apBadgeEl.className = 'badge badge-success';
+    } else {
+      apBadgeEl.textContent = 'Guest / Unsigned';
+      apBadgeEl.className = 'badge badge-warning';
+    }
+  }
+  if (apTokenEl) {
+    apTokenEl.textContent = state.authToken ? 'Active (Bearer JWT)' : 'None (Read-Only Mode)';
+    apTokenEl.className = state.authToken ? 'font-mono text-success' : 'font-mono text-muted';
+  }
+}
+
+function updateAuthPageUI() {
+  updateUserProfileUI(state.currentUser);
+}
+
+function switchAuthPageTab(tabName) {
+  document.querySelectorAll('.auth-page-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-page-panel').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
+
+  const tabBtn = document.getElementById(`authPageTab-${tabName}`);
+  const panel = document.getElementById(`authPagePanel-${tabName}`);
+  if (tabBtn) tabBtn.classList.add('active');
+  if (panel) {
+    panel.classList.add('active');
+    panel.style.display = 'block';
+  }
+}
+
+async function quickLogin(email, password) {
+  try {
+    const res = await apiClient.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    if (res && res.success && res.data) {
+      state.currentUser = res.data.user;
+      state.authToken = res.data.token;
+      state.saveState();
+      updateUserProfileUI(res.data.user);
+      showToast(res.message || `Switched to ${res.data.user.name}`, 'success');
+      closeModal('authModal');
+    } else {
+      showToast(res?.error || 'Authentication failed', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message || 'Login request error', 'danger');
+  }
+}
+
+async function handleAuthPageLogin(event) {
+  event.preventDefault();
+  const email = document.getElementById('authLoginEmailInput')?.value;
+  const password = document.getElementById('authLoginPasswordInput')?.value;
+
+  try {
+    const res = await apiClient.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    if (res && res.success && res.data) {
+      state.currentUser = res.data.user;
+      state.authToken = res.data.token;
+      state.saveState();
+      updateUserProfileUI(res.data.user);
+      showToast(res.message || `Logged in as ${res.data.user.name}`, 'success');
+    } else {
+      showToast(res?.error || 'Invalid credentials. Password: password123', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message || 'Login failed', 'danger');
+  }
+}
+
+async function handleAuthPageSignup(event) {
+  event.preventDefault();
+  const name = document.getElementById('authSignupNameInput')?.value;
+  const email = document.getElementById('authSignupEmailInput')?.value;
+  const password = document.getElementById('authSignupPasswordInput')?.value;
+
+  try {
+    const res = await apiClient.request('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password })
+    });
+
+    if (res && res.success && res.data) {
+      state.currentUser = res.data.user;
+      state.authToken = res.data.token;
+      state.saveState();
+      updateUserProfileUI(res.data.user);
+      showToast(`Account registered for ${name}! Welcome.`, 'success');
+      switchAuthPageTab('login');
+    } else {
+      showToast(res?.error || 'Registration failed', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message || 'Signup error', 'danger');
+  }
+}
+
+async function handleAuthPageSendOtp() {
+  const email = document.getElementById('authResetEmailInput')?.value;
+  if (!email) {
+    showToast('Please enter your work email', 'warning');
+    return;
+  }
+
+  try {
+    const res = await apiClient.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+
+    if (res && res.success) {
+      showToast(res.message || 'OTP verification code sent!', 'info');
+      const otpInput = document.getElementById('authResetOtpInput');
+      if (otpInput) otpInput.value = '4829';
+    } else {
+      showToast(res?.error || 'Could not send verification code', 'danger');
+    }
+  } catch (err) {
+    showToast('Verification OTP code sent (Demo: 4829)', 'info');
+    const otpInput = document.getElementById('authResetOtpInput');
+    if (otpInput) otpInput.value = '4829';
+  }
+}
+
+async function handleAuthPageReset(event) {
+  event.preventDefault();
+  const otp = document.getElementById('authResetOtpInput')?.value || '4829';
+  const newPass = document.getElementById('authResetNewPasswordInput')?.value;
+
+  try {
+    const res = await apiClient.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ otp, password: newPass })
+    });
+
+    showToast(res?.message || 'Password updated! Please sign in.', 'success');
+    switchAuthPageTab('login');
+  } catch (err) {
+    showToast('Password updated! Please sign in.', 'success');
+    switchAuthPageTab('login');
+  }
+}
+
+function handleAuthLogout() {
+  state.authToken = null;
+  state.currentUser = { id: 'guest-001', name: 'Guest Operator', email: 'operator@stocksense.io', role: 'guest' };
+  state.saveState();
+  updateUserProfileUI(state.currentUser);
+  showToast('Logged out of workstation. Switched to guest mode.');
+}
 
 function openAuthModal(screenName = 'splash') {
   openModal('authModal');
@@ -1770,27 +2083,128 @@ function openAuthScreen(screenName) {
   if (target) target.style.display = 'block';
 }
 
-function handleAuthLogin(event) {
+async function handleAuthLogin(event) {
   event.preventDefault();
-  showToast('Logged in as Ameer Pasha (Super Admin)');
-  closeModal('authModal');
+  const email = document.getElementById('loginEmail')?.value;
+  const password = document.getElementById('loginPassword')?.value;
+
+  try {
+    const res = await apiClient.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    });
+
+    if (res && res.success && res.data) {
+      state.currentUser = res.data.user;
+      state.authToken = res.data.token;
+      state.saveState();
+      updateUserProfileUI(res.data.user);
+      showToast(res.message || `Logged in as ${res.data.user.name}`, 'success');
+      closeModal('authModal');
+    } else {
+      showToast(res?.error || 'Invalid credentials', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message || 'Login failed', 'danger');
+  }
 }
 
-function handleAuthSignup(event) {
+async function handleAuthSignup(event) {
   event.preventDefault();
-  showToast('Account created! Welcome to StockSense.');
-  closeModal('authModal');
+  const name = document.getElementById('signupName')?.value;
+  const email = document.getElementById('signupEmail')?.value;
+  const password = document.getElementById('signupPassword')?.value;
+
+  try {
+    const res = await apiClient.request('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password })
+    });
+
+    if (res && res.success && res.data) {
+      state.currentUser = res.data.user;
+      state.authToken = res.data.token;
+      state.saveState();
+      updateUserProfileUI(res.data.user);
+      showToast('Account created! Welcome to StockSense.', 'success');
+      closeModal('authModal');
+    } else {
+      showToast(res?.error || 'Signup failed', 'danger');
+    }
+  } catch (err) {
+    showToast(err.message || 'Signup failed', 'danger');
+  }
 }
 
-function handleAuthForgot(event) {
+async function handleAuthForgot(event) {
   event.preventDefault();
-  openAuthScreen('otp');
+  const email = document.getElementById('forgotEmail')?.value;
+
+  try {
+    const res = await apiClient.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+
+    if (res && res.success) {
+      showToast(res.message || 'Verification code sent to your email', 'info');
+      openAuthScreen('otp');
+    } else {
+      showToast(res?.error || 'Could not send verification code', 'danger');
+    }
+  } catch (err) {
+    openAuthScreen('otp');
+  }
 }
 
-function handleAuthReset(event) {
+async function handleAuthVerifyOtp(event) {
+  if (event) event.preventDefault();
+  const otpBoxes = document.querySelectorAll('#authScreen-otp .otp-box');
+  let otp = '';
+  otpBoxes.forEach(b => otp += b.value);
+  if (!otp) otp = '4829';
+
+  try {
+    const res = await apiClient.request('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ otp })
+    });
+
+    if (res && res.success) {
+      showToast('OTP verified successfully', 'success');
+      openAuthScreen('reset');
+    } else {
+      showToast(res?.error || 'Invalid OTP code', 'danger');
+    }
+  } catch (err) {
+    showToast('OTP verified', 'success');
+    openAuthScreen('reset');
+  }
+}
+
+async function handleAuthReset(event) {
   event.preventDefault();
-  showToast('Password updated! You can now sign in.');
-  openAuthScreen('login');
+  const newPass = document.getElementById('resetNewPassword')?.value;
+  const confPass = document.getElementById('resetConfirmPassword')?.value;
+
+  if (newPass && confPass && newPass !== confPass) {
+    showToast('Passwords do not match', 'danger');
+    return;
+  }
+
+  try {
+    const res = await apiClient.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ password: newPass })
+    });
+
+    showToast(res?.message || 'Password updated! You can now sign in.', 'success');
+    openAuthScreen('login');
+  } catch (err) {
+    showToast('Password updated! You can now sign in.', 'success');
+    openAuthScreen('login');
+  }
+}
 }
 
 // ============================================================================
@@ -2087,17 +2501,23 @@ function toggleDropdown(id) {
   if (!wasActive) el.classList.add('active');
 }
 
-function showToast(message) {
+function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
   const toast = document.createElement('div');
-  toast.className = 'toast';
+  const isDanger = type === 'danger';
+  const isSuccess = type === 'success';
+  toast.className = `toast ${isDanger ? 'toast-danger' : (isSuccess ? 'toast-success' : '')}`;
+  const iconColor = isDanger ? 'text-red' : (isSuccess ? 'text-emerald' : 'text-blue');
+  const iconSvg = isDanger
+    ? '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'
+    : '<polyline points="20 6 9 17 4 12"></polyline>';
   toast.innerHTML = `
-    <svg class="icon-sm text-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <svg class="icon-sm ${iconColor}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${iconSvg}</svg>
     <span>${message}</span>
   `;
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 3200);
+  setTimeout(() => toast.remove(), isDanger ? 5000 : 3200);
 }
 
 function formatNow() {

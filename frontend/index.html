@@ -17,189 +17,224 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="desktop-app">
-  <!-- Top App Window Bar (Desktop Titlebar Style) -->
-  <header class="app-topbar">
-    <div class="topbar-left">
-      <div class="brand-logo" onclick="navigateTo('dashboard')">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-          </svg>
+  <div class="app-shell">
+    <!-- Accessible Left Sidebar Navigation -->
+    <aside id="appSidebar" class="app-sidebar" role="navigation" aria-label="StockSense System Navigation">
+      <!-- Sidebar Brand Header -->
+      <div class="sidebar-header">
+        <div class="brand-logo" role="button" tabindex="0" onclick="navigateTo('dashboard')" onkeydown="if(event.key==='Enter'||event.key===' ')navigateTo('dashboard')" aria-label="StockSense Home, go to Dashboard">
+          <div class="logo-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">StockSense</span>
+            <span class="brand-tagline">IMS Enterprise</span>
+          </div>
         </div>
-        <div class="brand-text">
-          <span class="brand-name">StockSense</span>
-          <span class="brand-tagline">Inventory Management System</span>
+      </div>
+
+      <!-- Quick Warehouse Scope Selector (Inside Sidebar) -->
+      <div class="sidebar-scope">
+        <label for="globalWarehouseFilter" class="sidebar-scope-label">Warehouse Scope</label>
+        <div class="warehouse-scope-selector">
+          <svg class="icon-sm" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+          <select id="globalWarehouseFilter" aria-label="Select Warehouse Scope" onchange="handleWarehouseChange(this.value)">
+            <option value="ALL">All Warehouses (Global)</option>
+            <option value="WH-MAIN">Main Warehouse HQ</option>
+            <option value="WH-NORTH">North Logistics Hub</option>
+            <option value="WH-SOUTH">South Depot & Cold Storage</option>
+            <option value="WH-EAST">East Coast Distribution</option>
+          </select>
         </div>
       </div>
 
-      <!-- Quick Warehouse Scope Selector -->
-      <div class="warehouse-scope-selector">
-        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
-        <select id="globalWarehouseFilter" onchange="handleWarehouseChange(this.value)">
-          <option value="ALL">All Warehouses (Global)</option>
-          <option value="WH-MAIN">Main Warehouse HQ</option>
-          <option value="WH-NORTH">North Logistics Hub</option>
-          <option value="WH-SOUTH">South Depot & Cold Storage</option>
-          <option value="WH-EAST">East Coast Distribution</option>
-        </select>
-      </div>
-
-      <!-- Real-time Backend API Status Indicator -->
-      <div class="api-status-badge" id="apiStatusBadge" onclick="apiClient.syncFromBackend(false)" title="StockSense Backend API Status (Click to re-sync)">
-        <span class="api-status-dot online" id="apiStatusDot"></span>
-        <span id="apiStatusText">API: Connected</span>
-      </div>
-    </div>
-
-    <!-- Global Module Navigation Bar (Matching Diagram Header) -->
-    <nav class="top-nav-tabs">
-      <button class="nav-tab active" data-view="dashboard" onclick="navigateTo('dashboard')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-        <span>Dashboard</span>
-      </button>
-
-      <button class="nav-tab" data-view="products" onclick="navigateTo('products')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        <span>Products</span>
-      </button>
-
-      <button class="nav-tab" data-view="warehouses" onclick="navigateTo('warehouses')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        <span>Warehouses</span>
-      </button>
-
-      <button class="nav-tab" data-view="receipts" onclick="navigateTo('receipts')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path></svg>
-        <span>Receipts</span>
-      </button>
-
-      <button class="nav-tab" data-view="deliveries" onclick="navigateTo('deliveries')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-        <span>Delivery Orders</span>
-      </button>
-
-      <button class="nav-tab" data-view="transfers" onclick="navigateTo('transfers')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-        <span>Transfers</span>
-      </button>
-
-      <button class="nav-tab" data-view="adjustments" onclick="navigateTo('adjustments')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
-        <span>Adjustments</span>
-      </button>
-
-      <button class="nav-tab" data-view="history" onclick="navigateTo('history')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-        <span>Stock History</span>
-      </button>
-
-      <button class="nav-tab" data-view="insights" onclick="navigateTo('insights')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-        <span>Insights</span>
-      </button>
-    </nav>
-
-    <!-- Topbar Right Actions -->
-    <div class="topbar-right">
-      <!-- Global Search Shortcut Bar -->
-      <div class="search-command-bar" onclick="openCommandPalette()">
-        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <span class="search-hint">Search items, orders, transfers...</span>
-        <kbd class="kbd-badge">Ctrl K</kbd>
-      </div>
-
-      <!-- Quick Action Floating Button -->
-      <div class="dropdown-wrapper">
-        <button class="btn btn-primary btn-sm quick-add-btn" onclick="toggleDropdown('quickCreateDropdown')">
-          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>New</span>
+      <!-- Global Module Navigation Bar (Accessible Tablist) -->
+      <nav class="sidebar-nav" role="tablist" aria-orientation="vertical" aria-label="StockSense System Navigation">
+        <div class="nav-section-title">CORE OPERATIONS</div>
+        <button class="nav-tab active" id="tab-dashboard" role="tab" aria-selected="true" aria-controls="view-dashboard" tabindex="0" data-view="dashboard" onclick="navigateTo('dashboard')" title="Dashboard (Overview & KPIs)">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
         </button>
-        <div id="quickCreateDropdown" class="dropdown-menu dropdown-right">
-          <div class="dropdown-header">Quick Create</div>
-          <a href="#" onclick="openModal('addProductModal'); return false;" class="dropdown-item">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-            <span>Add New Product</span>
-          </a>
-          <a href="#" onclick="openModal('newReceiptModal'); return false;" class="dropdown-item">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>Inbound Receipt</span>
-          </a>
-          <a href="#" onclick="openModal('newDeliveryModal'); return false;" class="dropdown-item">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon></svg>
-            <span>Delivery Order</span>
-          </a>
-          <a href="#" onclick="openModal('newTransferModal'); return false;" class="dropdown-item">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline></svg>
-            <span>Internal Transfer</span>
-          </a>
-          <a href="#" onclick="openModal('newAdjustmentModal'); return false;" class="dropdown-item">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
-            <span>Stock Adjustment</span>
-          </a>
-        </div>
-      </div>
 
-      <!-- Live Notifications / Alerts Bell -->
-      <div class="dropdown-wrapper">
-        <button class="icon-btn" onclick="toggleDropdown('notificationsDropdown')" title="Notifications & Alerts">
-          <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-          <span class="notification-badge" id="notifBadgeCount">3</span>
+        <button class="nav-tab" id="tab-products" role="tab" aria-selected="false" aria-controls="view-products" tabindex="-1" data-view="products" onclick="navigateTo('products')" title="Products & Catalog">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          <span>Products</span>
         </button>
-        <div id="notificationsDropdown" class="dropdown-menu dropdown-right notif-menu">
-          <div class="dropdown-header flex-between">
-            <span>System Alerts</span>
-            <span class="badge badge-danger">Live Stream</span>
-          </div>
-          <div class="notif-list" id="notifListContainer">
-            <!-- Dynamically injected -->
-          </div>
-          <div class="dropdown-footer">
-            <button class="btn-link" onclick="navigateTo('history')">View Audit Ledger</button>
-          </div>
-        </div>
-      </div>
 
-      <!-- Theme Switcher (Dark / Light) -->
-      <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark / Light Mode">
-        <svg class="icon-md sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-      </button>
+        <button class="nav-tab" id="tab-warehouses" role="tab" aria-selected="false" aria-controls="view-warehouses" tabindex="-1" data-view="warehouses" onclick="navigateTo('warehouses')" title="Warehouses & Locations">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>Warehouses</span>
+        </button>
 
-      <!-- Mobile Layout Visualizer Popup Trigger (Screen 25 in Diagram) -->
-      <button class="icon-btn mobile-preview-btn" onclick="openModal('mobilePreviewModal')" title="View Responsive Mobile Companion Mockup (Wireframe #25)">
-        <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-      </button>
+        <div class="nav-section-title">LOGISTICS WORKFLOWS</div>
+        <button class="nav-tab" id="tab-receipts" role="tab" aria-selected="false" aria-controls="view-receipts" tabindex="-1" data-view="receipts" onclick="navigateTo('receipts')" title="Inbound Receipts">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path></svg>
+          <span>Receipts</span>
+        </button>
 
-      <!-- User Profile Menu -->
-      <div class="dropdown-wrapper">
-        <div class="user-pill" onclick="toggleDropdown('userMenuDropdown')">
-          <div class="avatar-circle">M4</div>
+        <button class="nav-tab" id="tab-deliveries" role="tab" aria-selected="false" aria-controls="view-deliveries" tabindex="-1" data-view="deliveries" onclick="navigateTo('deliveries')" title="Delivery Orders (Outbound)">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+          <span>Deliveries</span>
+        </button>
+
+        <button class="nav-tab" id="tab-transfers" role="tab" aria-selected="false" aria-controls="view-transfers" tabindex="-1" data-view="transfers" onclick="navigateTo('transfers')" title="Internal Transfers">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+          <span>Transfers</span>
+        </button>
+
+        <button class="nav-tab" id="tab-adjustments" role="tab" aria-selected="false" aria-controls="view-adjustments" tabindex="-1" data-view="adjustments" onclick="navigateTo('adjustments')" title="Stock Adjustments & Audits">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+          <span>Adjustments</span>
+        </button>
+
+        <div class="nav-section-title">INTELLIGENCE & SECURITY</div>
+        <button class="nav-tab" id="tab-history" role="tab" aria-selected="false" aria-controls="view-history" tabindex="-1" data-view="history" onclick="navigateTo('history')" title="Stock History Ledger">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>History Ledger</span>
+        </button>
+
+        <button class="nav-tab" id="tab-insights" role="tab" aria-selected="false" aria-controls="view-insights" tabindex="-1" data-view="insights" onclick="navigateTo('insights')" title="Stock Insights & Analytics">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Insights & ABC</span>
+        </button>
+
+        <button class="nav-tab" id="tab-auth" role="tab" aria-selected="false" aria-controls="view-auth" tabindex="-1" data-view="auth" onclick="navigateTo('auth')" title="Authentication & Session Center">
+          <svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span>Authentication</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar User Footer -->
+      <div class="sidebar-footer">
+        <div class="sidebar-user-card" onclick="navigateTo('auth')" title="View Authentication & Account Settings" role="button" tabindex="0">
+          <div class="avatar-circle" id="sidebarUserAvatar">M4</div>
           <div class="user-meta">
-            <span class="user-name">Member 4</span>
-            <span class="user-role">Dashboard & Intelligence</span>
+            <span class="user-name" id="sidebarUserName">Member 4</span>
+            <span class="user-role" id="sidebarUserRole">Admin &middot; Online</span>
           </div>
-          <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </div>
-        <div id="userMenuDropdown" class="dropdown-menu dropdown-right">
-          <div class="dropdown-header">Logged in as Member 4</div>
-          <a href="#" onclick="openAuthModal('login'); return false;" class="dropdown-item">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-            <span>Switch / View Auth Screens (1-6)</span>
-          </a>
-          <a href="#" onclick="openModal('settingsModal'); return false;" class="dropdown-item">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            <span>System Settings & Alerts</span>
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" onclick="resetDemoData(); return false;" class="dropdown-item text-warning">
-            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            <span>Reset Demo Data</span>
-          </a>
+          <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
       </div>
-    </div>
-  </header>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-main">
+      <!-- Topbar Header -->
+      <header class="app-topbar">
+        <div class="topbar-left">
+          <div class="topbar-breadcrumb">
+            <span class="text-muted">StockSense</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-active" id="currentViewBreadcrumb">Operations & Inventory Analytics</span>
+          </div>
+          <span class="badge badge-success badge-sm flex-align-center gap-1" style="font-size: 0.72rem; padding: 2px 8px;">
+            <span class="status-indicator online"></span> Live Telemetry
+          </span>
+        </div>
+
+        <!-- Topbar Right Actions -->
+        <div class="topbar-right">
+          <!-- Global Search Shortcut Bar -->
+          <div class="search-command-bar" onclick="openCommandPalette()">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span class="search-hint">Search items, orders, transfers...</span>
+            <kbd class="kbd-badge">Ctrl K</kbd>
+          </div>
+
+          <!-- Quick Action Floating Button -->
+          <div class="dropdown-wrapper">
+            <button class="btn btn-primary btn-sm quick-add-btn" onclick="toggleDropdown('quickCreateDropdown')">
+              <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>New</span>
+            </button>
+            <div id="quickCreateDropdown" class="dropdown-menu dropdown-right">
+              <div class="dropdown-header">Quick Create</div>
+              <a href="#" onclick="openModal('addProductModal'); return false;" class="dropdown-item">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                <span>Add New Product</span>
+              </a>
+              <a href="#" onclick="openModal('newReceiptModal'); return false;" class="dropdown-item">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Inbound Receipt</span>
+              </a>
+              <a href="#" onclick="openModal('newDeliveryModal'); return false;" class="dropdown-item">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon></svg>
+                <span>Delivery Order</span>
+              </a>
+              <a href="#" onclick="openModal('newTransferModal'); return false;" class="dropdown-item">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline></svg>
+                <span>Internal Transfer</span>
+              </a>
+              <a href="#" onclick="openModal('newAdjustmentModal'); return false;" class="dropdown-item">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+                <span>Stock Adjustment</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Live Notifications / Alerts Bell -->
+          <div class="dropdown-wrapper">
+            <button class="icon-btn" onclick="toggleDropdown('notificationsDropdown')" title="Notifications & Alerts">
+              <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span class="notification-badge" id="notifBadgeCount">3</span>
+            </button>
+            <div id="notificationsDropdown" class="dropdown-menu dropdown-right notif-menu">
+              <div class="dropdown-header flex-between">
+                <span>System Alerts</span>
+                <span class="badge badge-danger">Live Stream</span>
+              </div>
+              <div class="notif-list" id="notifListContainer">
+                <!-- Dynamically injected -->
+              </div>
+              <div class="dropdown-footer">
+                <button class="btn-link" onclick="navigateTo('history')">View Audit Ledger</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Theme Switcher (Dark / Light) -->
+          <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark / Light Mode">
+            <svg class="icon-md sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          </button>
+
+          <!-- Mobile Layout Visualizer Popup Trigger (Screen 25 in Diagram) -->
+          <button class="icon-btn mobile-preview-btn" onclick="openModal('mobilePreviewModal')" title="View Responsive Mobile Companion Mockup (Wireframe #25)">
+            <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          </button>
+
+          <!-- User Profile Menu -->
+          <div class="dropdown-wrapper">
+            <div class="user-pill" onclick="toggleDropdown('userMenuDropdown')">
+              <div class="avatar-circle" id="currentUserAvatar">M4</div>
+              <div class="user-meta">
+                <span class="user-name" id="currentUserName">Member 4</span>
+                <span class="user-role" id="currentUserRole">Admin</span>
+              </div>
+              <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div id="userMenuDropdown" class="dropdown-menu dropdown-right">
+              <div class="dropdown-header" id="userMenuHeader">Logged in as Member 4</div>
+              <a href="#" onclick="navigateTo('auth'); toggleDropdown('userMenuDropdown'); return false;" class="dropdown-item">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span>Authentication & Session</span>
+              </a>
+              <a href="#" onclick="openModal('settingsModal'); toggleDropdown('userMenuDropdown'); return false;" class="dropdown-item">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span>System Settings & Alerts</span>
+              </a>
+              <div class="dropdown-divider"></div>
+              <a href="#" onclick="resetDemoData(); toggleDropdown('userMenuDropdown'); return false;" class="dropdown-item text-warning">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Reset Demo Data</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
 
   <!-- Main Viewport Shell -->
   <main class="app-viewport">
@@ -208,7 +243,7 @@
     <!-- VIEW 1: OPERATIONS & ANALYTICS / MAIN DASHBOARD (Screen 7) -->
     <!-- Member 4: Core Ownership Module                           -->
     <!-- ======================================================== -->
-    <section id="view-dashboard" class="app-view active">
+    <section id="view-dashboard" class="app-view active" role="tabpanel" aria-labelledby="tab-dashboard">
       <!-- Dashboard Top Header -->
       <div class="view-header flex-between">
         <div>
@@ -424,7 +459,7 @@
     <!-- ======================================================== -->
     <!-- VIEW 2: PRODUCTS CATALOG (Screens 8, 9, 10, 11)           -->
     <!-- ======================================================== -->
-    <section id="view-products" class="app-view">
+    <section id="view-products" class="app-view" role="tabpanel" aria-labelledby="tab-products">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Products & Inventory Catalog</h1>
@@ -506,7 +541,7 @@
     <!-- ======================================================== -->
     <!-- VIEW 3: WAREHOUSES & LOCATIONS (Screen 12)                 -->
     <!-- ======================================================== -->
-    <section id="view-warehouses" class="app-view">
+    <section id="view-warehouses" class="app-view" role="tabpanel" aria-labelledby="tab-warehouses">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Warehouse Hubs & Locations</h1>
@@ -555,7 +590,7 @@
     <!-- ======================================================== -->
     <!-- VIEW 4: INBOUND RECEIPTS (Screens 13, 14, 15)              -->
     <!-- ======================================================== -->
-    <section id="view-receipts" class="app-view">
+    <section id="view-receipts" class="app-view" role="tabpanel" aria-labelledby="tab-receipts">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Inbound Receipts (Purchase Inflow)</h1>
@@ -617,7 +652,7 @@
     <!-- ======================================================== -->
     <!-- VIEW 5: DELIVERY ORDERS (Screens 16, 17)                   -->
     <!-- ======================================================== -->
-    <section id="view-deliveries" class="app-view">
+    <section id="view-deliveries" class="app-view" role="tabpanel" aria-labelledby="tab-deliveries">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Delivery Orders (Outbound Dispatches)</h1>
@@ -678,7 +713,7 @@
     <!-- ======================================================== -->
     <!-- VIEW 6: INTERNAL TRANSFERS (Screens 18, 19, 20)           -->
     <!-- ======================================================== -->
-    <section id="view-transfers" class="app-view">
+    <section id="view-transfers" class="app-view" role="tabpanel" aria-labelledby="tab-transfers">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Internal Warehouse Transfers</h1>
@@ -727,7 +762,7 @@
     <!-- ======================================================== -->
     <!-- VIEW 7: STOCK ADJUSTMENTS (Screen 21)                     -->
     <!-- ======================================================== -->
-    <section id="view-adjustments" class="app-view">
+    <section id="view-adjustments" class="app-view" role="tabpanel" aria-labelledby="tab-adjustments">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Physical Stock Adjustments</h1>
@@ -773,7 +808,7 @@
     <!-- ======================================================== -->
     <!-- VIEW 8: STOCK HISTORY / AUDIT TRAIL (Screen 22)           -->
     <!-- ======================================================== -->
-    <section id="view-history" class="app-view">
+    <section id="view-history" class="app-view" role="tabpanel" aria-labelledby="tab-history">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Stock History & Immutable Audit Ledger</h1>
@@ -837,7 +872,7 @@
     <!-- VIEW 9: INSIGHTS & ADVANCED ANALYTICS (Screen 23, 24)     -->
     <!-- Member 4: Core Ownership Module                           -->
     <!-- ======================================================== -->
-    <section id="view-insights" class="app-view">
+    <section id="view-insights" class="app-view" role="tabpanel" aria-labelledby="tab-insights">
       <div class="view-header flex-between">
         <div>
           <h1 class="view-title">Insights, Forecasting & Health Metrics</h1>
@@ -912,7 +947,189 @@
         </div>
       </div>
     </section>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 10: AUTHENTICATION & ACCESS CONTROL (Screen 1-6)    -->
+    <!-- Dedicated Authentication Page with Live API Integration  -->
+    <!-- ======================================================== -->
+    <section id="view-auth" class="app-view" role="tabpanel" aria-labelledby="tab-auth">
+      <div class="view-header flex-between">
+        <div>
+          <h1 class="view-title">Authentication & Identity Center</h1>
+          <p class="view-subtitle">Enterprise Role-Based Access Control (RBAC), Operator Sign-In, and Secure Credential Management.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" id="authPageLogoutBtn" onclick="handleAuthLogout()">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="auth-page-grid">
+        <!-- Left Column: Session Card & 1-Click Quick Demo Profiles -->
+        <div class="auth-page-left">
+          <!-- Active Session Card -->
+          <div class="card auth-session-card">
+            <div class="card-header flex-between">
+              <span class="card-title">Active Operator Session</span>
+              <span class="badge badge-success" id="authSessionStatusBadge">Authenticated</span>
+            </div>
+            <div class="card-body">
+              <div class="auth-user-profile-display">
+                <div class="avatar-circle-lg" id="authPageAvatar">M4</div>
+                <div class="auth-user-info">
+                  <h3 id="authPageUserName">Member 4</h3>
+                  <p class="text-muted" id="authPageUserEmail">member4@stocksense.io</p>
+                  <div class="auth-user-tags mt-2">
+                    <span class="badge badge-primary" id="authPageUserRole">Admin</span>
+                    <span class="badge badge-secondary">Full ERP Scope</span>
+                  </div>
+                </div>
+              </div>
+              <div class="session-metadata mt-3">
+                <div class="meta-row">
+                  <span class="text-muted">Token Status:</span>
+                  <span class="font-mono text-success" id="authTokenStatus">Active (Bearer JWT)</span>
+                </div>
+                <div class="meta-row">
+                  <span class="text-muted">Security Layer:</span>
+                  <span>Two-Phase Commit Guard</span>
+                </div>
+                <div class="meta-row">
+                  <span class="text-muted">Module Permissions:</span>
+                  <span>Products, Receipts, Deliveries, Transfers, Ledger</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick 1-Click Demo Profiles -->
+          <div class="card mt-3">
+            <div class="card-header flex-between">
+              <span class="card-title">Quick 1-Click Demo Logins</span>
+              <span class="badge badge-secondary">Instant Switch</span>
+            </div>
+            <div class="card-body">
+              <p class="text-sm text-muted mb-3">Click any profile below to instantly authenticate and test role-based capabilities:</p>
+              <div class="demo-profiles-list">
+                <button class="demo-profile-btn" onclick="quickLogin('ameer@stocksense.io', 'password123')">
+                  <div class="avatar-circle">AP</div>
+                  <div class="demo-profile-info">
+                    <span class="demo-name">Ameer Pasha</span>
+                    <span class="demo-role">Super Admin &middot; ameer@stocksense.io</span>
+                  </div>
+                  <span class="badge badge-primary">Admin</span>
+                </button>
+                <button class="demo-profile-btn" onclick="quickLogin('member4@stocksense.io', 'password123')">
+                  <div class="avatar-circle">M4</div>
+                  <div class="demo-profile-info">
+                    <span class="demo-name">Member 4</span>
+                    <span class="demo-role">Intelligence Lead &middot; member4@stocksense.io</span>
+                  </div>
+                  <span class="badge badge-primary">Admin</span>
+                </button>
+                <button class="demo-profile-btn" onclick="quickLogin('faizan@stocksense.io', 'password123')">
+                  <div class="avatar-circle">FZ</div>
+                  <div class="demo-profile-info">
+                    <span class="demo-name">Faizan</span>
+                    <span class="demo-role">Warehouse Staff &middot; faizan@stocksense.io</span>
+                  </div>
+                  <span class="badge badge-secondary">Staff</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive Tabbed Form (Sign In, Create Account, Reset Password) -->
+        <div class="auth-page-right">
+          <div class="card auth-form-card">
+            <!-- Form Tabs -->
+            <div class="auth-page-tabs" role="tablist">
+              <button class="auth-page-tab active" id="authPageTab-login" onclick="switchAuthPageTab('login')">Sign In</button>
+              <button class="auth-page-tab" id="authPageTab-signup" onclick="switchAuthPageTab('signup')">Create Account</button>
+              <button class="auth-page-tab" id="authPageTab-reset" onclick="switchAuthPageTab('reset')">Reset Password</button>
+            </div>
+
+            <!-- Sign In Panel -->
+            <div id="authPagePanel-login" class="auth-page-panel active">
+              <h2 class="auth-panel-title">Sign In to Workstation</h2>
+              <p class="auth-panel-subtitle">Enter your StockSense credentials to authenticate your session.</p>
+              <form id="authPageLoginForm" onsubmit="handleAuthPageLogin(event)">
+                <div class="form-group">
+                  <label for="authLoginEmailInput">Work Email or Username</label>
+                  <input type="email" id="authLoginEmailInput" class="form-control" value="member4@stocksense.io" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                  <div class="flex-between">
+                    <label for="authLoginPasswordInput">Password</label>
+                    <a href="#" class="auth-link-sm" onclick="switchAuthPageTab('reset'); return false;">Forgot password?</a>
+                  </div>
+                  <input type="password" id="authLoginPasswordInput" class="form-control" value="password123" required autocomplete="current-password">
+                </div>
+                <button type="submit" id="authPageSubmitLoginBtn" class="btn btn-primary btn-block btn-lg mt-3">
+                  <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                  <span>Sign In</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Create Account Panel -->
+            <div id="authPagePanel-signup" class="auth-page-panel" style="display: none;">
+              <h2 class="auth-panel-title">Create New Account</h2>
+              <p class="auth-panel-subtitle">Register a new operator or manager workstation login.</p>
+              <form id="authPageSignupForm" onsubmit="handleAuthPageSignup(event)">
+                <div class="form-group">
+                  <label for="authSignupNameInput">Full Name</label>
+                  <input type="text" id="authSignupNameInput" class="form-control" placeholder="e.g. Sarah Jenkins" required>
+                </div>
+                <div class="form-group">
+                  <label for="authSignupEmailInput">Work Email</label>
+                  <input type="email" id="authSignupEmailInput" class="form-control" placeholder="s.jenkins@stocksense.io" required>
+                </div>
+                <div class="form-group">
+                  <label for="authSignupPasswordInput">Password</label>
+                  <input type="password" id="authSignupPasswordInput" class="form-control" placeholder="Min. 8 characters" required>
+                </div>
+                <button type="submit" id="authPageSubmitSignupBtn" class="btn btn-primary btn-block btn-lg mt-3">
+                  <span>Register Account</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Reset Password Panel -->
+            <div id="authPagePanel-reset" class="auth-page-panel" style="display: none;">
+              <h2 class="auth-panel-title">Password Recovery & OTP</h2>
+              <p class="auth-panel-subtitle">Request a 4-digit OTP to reset your account password.</p>
+              <form id="authPageResetForm" onsubmit="handleAuthPageReset(event)">
+                <div class="form-group">
+                  <label for="authResetEmailInput">Work Email</label>
+                  <div class="input-with-button">
+                    <input type="email" id="authResetEmailInput" class="form-control" value="member4@stocksense.io" required>
+                    <button type="button" class="btn btn-outline" onclick="handleAuthPageSendOtp()">Send OTP</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="authResetOtpInput">4-Digit Verification Code</label>
+                  <input type="text" id="authResetOtpInput" class="form-control font-mono" placeholder="4829" maxlength="6">
+                </div>
+                <div class="form-group">
+                  <label for="authResetNewPasswordInput">New Password</label>
+                  <input type="password" id="authResetNewPasswordInput" class="form-control" placeholder="New secure password">
+                </div>
+                <button type="submit" id="authPageSubmitResetBtn" class="btn btn-primary btn-block btn-lg mt-3">
+                  <span>Update Password</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+</div><!-- .app-main -->
+</div><!-- .app-shell -->
 
 
   <!-- ======================================================== -->
@@ -1474,15 +1691,15 @@
         <form onsubmit="handleAuthSignup(event)">
           <div class="form-group">
             <label>Full Name</label>
-            <input type="text" placeholder="e.g. Member 4" required>
+            <input type="text" id="signupName" placeholder="e.g. Member 4" required>
           </div>
           <div class="form-group">
             <label>Email Address</label>
-            <input type="email" placeholder="name@company.com" required>
+            <input type="email" id="signupEmail" placeholder="name@company.com" required>
           </div>
           <div class="form-group">
             <label>Create Password</label>
-            <input type="password" placeholder="Min. 8 characters" required>
+            <input type="password" id="signupPassword" placeholder="Min. 8 characters" required>
           </div>
           <button type="submit" class="btn btn-primary btn-block btn-lg mt-3">Sign Up</button>
         </form>
@@ -1517,7 +1734,7 @@
           <input type="text" maxlength="1" class="otp-box" value="2">
           <input type="text" maxlength="1" class="otp-box" value="9">
         </div>
-        <button type="button" class="btn btn-primary btn-block btn-lg mt-3" onclick="openAuthScreen('reset')">Verify & Continue</button>
+        <button type="button" class="btn btn-primary btn-block btn-lg mt-3" onclick="handleAuthVerifyOtp(event)">Verify & Continue</button>
         <p class="auth-footer-text mt-3">
           Didn't receive code? <a href="#" onclick="showToast('OTP resent to email!'); return false;">Resend Code (59s)</a>
         </p>
@@ -1530,11 +1747,11 @@
         <form onsubmit="handleAuthReset(event)">
           <div class="form-group">
             <label>New Password</label>
-            <input type="password" placeholder="••••••••" required>
+            <input type="password" id="resetNewPassword" placeholder="••••••••" required>
           </div>
           <div class="form-group">
             <label>Confirm New Password</label>
-            <input type="password" placeholder="••••••••" required>
+            <input type="password" id="resetConfirmPassword" placeholder="••••••••" required>
           </div>
           <button type="submit" class="btn btn-primary btn-block btn-lg mt-3">Reset Password Now</button>
         </form>

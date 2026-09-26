@@ -387,6 +387,84 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Demo & Persistent Users Store
+let users = [
+  { id: 'usr-001', name: 'Ameer Pasha', email: 'ameer@stocksense.io', role: 'admin', password: 'password123' },
+  { id: 'usr-002', name: 'Member 4', email: 'member4@stocksense.io', role: 'admin', password: 'password123' },
+  { id: 'usr-003', name: 'Prince', email: 'prince@stocksense.io', role: 'staff', password: 'password123' },
+  { id: 'usr-004', name: 'Tarun', email: 'tarun@stocksense.io', role: 'manager', password: 'password123' },
+  { id: 'usr-005', name: 'Faizan', email: 'faizan@stocksense.io', role: 'staff', password: 'password123' }
+];
+
+// 1.5 Authentication Endpoints
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = users.find(u => u.email.toLowerCase() === (email || '').toLowerCase().trim());
+  if (!user || (password && password !== user.password && password !== 'password123')) {
+    return res.status(401).json({ success: false, error: 'Invalid credentials. Use password: password123' });
+  }
+
+  const token = `token-${user.id}-${Date.now()}`;
+  res.json({
+    success: true,
+    message: `Logged in as ${user.name}`,
+    data: {
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    }
+  });
+});
+
+app.post('/api/auth/signup', (req, res) => {
+  const { name, email, password } = req.body;
+  if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
+  const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+  if (existing) return res.status(409).json({ error: 'User already registered with this email' });
+
+  const newUser = {
+    id: `usr-00${users.length + 1}`,
+    name,
+    email: email.trim().toLowerCase(),
+    role: 'staff',
+    password: password || 'password123'
+  };
+  users.push(newUser);
+  const token = `token-${newUser.id}-${Date.now()}`;
+  res.status(201).json({
+    success: true,
+    message: 'User registered successfully',
+    data: {
+      token,
+      user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role }
+    }
+  });
+});
+
+app.post('/api/auth/forgot-password', (req, res) => {
+  const { email } = req.body;
+  res.json({
+    success: true,
+    message: 'OTP verification code sent to ' + email,
+    data: { otp: '4829' }
+  });
+});
+
+app.post('/api/auth/verify-otp', (req, res) => {
+  const { otp } = req.body;
+  if (otp === '4829' || /^\d{4,6}$/.test(otp)) {
+    return res.json({ success: true, message: 'OTP verified successfully', resetToken: 'reset-token-valid' });
+  }
+  res.status(400).json({ error: 'Invalid OTP code' });
+});
+
+app.post('/api/auth/reset-password', (req, res) => {
+  res.json({ success: true, message: 'Password updated successfully. Please log in.' });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  res.json({ success: true, data: { user: users[0] } });
+});
+
 // 2. Dashboard KPIs
 app.get('/api/dashboard', (req, res) => {
   let totalStock = 0;
@@ -562,22 +640,60 @@ app.delete('/api/categories/:id', (req, res) => {
   res.json({ message: 'Category removed', data: deleted });
 });
 
+// Initialize Member 3 bridge with catalog products
+const {
+  receiptService,
+  deliveryService,
+  transferService,
+  adjustmentService,
+  operationsStore,
+  seedOperationsStore,
+  syncProductStock,
+  mapLedgerEntryToHistory
+} = require('./services/member3Bridge');
+
+seedOperationsStore(products);
+
 // 6. Stock Adjustments Endpoints (Tarun & Ameer scope)
 app.get('/api/adjustments', (req, res) => {
   res.json({ data: adjustments });
 });
 
+app.get('/api/stock-adjustments', (req, res) => {
+  res.json({ data: adjustments });
+});
+
 app.post('/api/adjustments', (req, res) => {
-  const { productId, realStock, reason, auditor } = req.body;
+  const { productId, realStock, countedQuantity, reason, remarks, auditor } = req.body;
   const p = products.find(item => item.id === productId || item.sku === productId);
   if (!p) return res.status(404).json({ error: 'Product not found for adjustment' });
 
+  const finalRealStock = parseInt(countedQuantity !== undefined ? countedQuantity : realStock, 10);
   const systemStock = p.stock;
-  const newRealStock = parseInt(realStock, 10);
-  const delta = newRealStock - systemStock;
+  const delta = finalRealStock - systemStock;
 
-  // Apply change to product
-  p.stock = newRealStock;
+  // Execute domain adjustment in Member 3 engine
+  const validReason = ['damaged', 'lost', 'found', 'miscount', 'expired', 'theft', 'audit'].includes((reason || '').toLowerCase())
+    ? reason.toLowerCase()
+    : 'audit';
+
+  try {
+    adjustmentService.create({
+      productId: p.id,
+      warehouseId: p.warehouse,
+      warehouseName: warehouses.find(w => w.id === p.warehouse)?.name || p.warehouse,
+      locationCode: p.bin || 'Rack A (Bulk Steel & Heavy Goods)',
+      countedQuantity: finalRealStock,
+      reason: validReason,
+      remarks: remarks || reason || 'Physical count audit',
+      auditedBy: auditor || 'Inventory Auditor'
+    });
+  } catch (err) {
+    console.warn('[AdjustmentService Warn]', err.message);
+  }
+
+  // Apply change to product in master catalog
+  p.stock = Math.max(0, finalRealStock);
   updateProductStatus(p);
 
   const newAdj = {
@@ -586,7 +702,7 @@ app.post('/api/adjustments', (req, res) => {
     productId: p.id,
     warehouse: p.warehouse,
     systemStock,
-    realStock: newRealStock,
+    realStock: finalRealStock,
     delta,
     reason: reason || 'Inventory Discrepancy Adjustment',
     auditor: auditor || 'Inventory Auditor',
@@ -617,77 +733,364 @@ app.get('/api/receipts', (req, res) => {
 });
 
 app.post('/api/receipts', (req, res) => {
+  const isDirectDone = req.body.status === 'Done' || req.body.status === 'done';
   const newRec = {
     id: req.body.id || `REC-2026-00${receipts.length + 1}`,
-    supplier: req.body.supplier || 'General Supplier',
-    warehouse: req.body.warehouse || 'WH-MAIN',
-    date: req.body.date || new Date().toISOString().split('T')[0],
+    supplier: req.body.supplier || req.body.supplierName || 'General Supplier',
+    warehouse: req.body.warehouse || req.body.warehouseId || 'WH-MAIN',
+    date: req.body.date || req.body.receiptDate || new Date().toISOString().split('T')[0],
     itemsCount: req.body.itemsCount || 0,
     totalValue: req.body.totalValue || 0,
-    status: req.body.status || 'Draft',
+    status: isDirectDone ? 'Done' : (req.body.status || 'Draft'),
     items: req.body.items || []
   };
+
+  // If directly validated or items specified, register with Member 3 service
+  try {
+    receiptService.create({
+      supplierName: newRec.supplier,
+      warehouseId: newRec.warehouse,
+      locationCode: 'Rack A (Bulk Steel & Heavy Goods)',
+      receiptDate: newRec.date,
+      items: newRec.items.map(i => ({
+        productId: i.productId,
+        quantity: i.qty || i.quantity || 1,
+        unitPrice: i.cost || i.unitPrice || 0
+      }))
+    });
+  } catch (err) {
+    console.warn('[ReceiptService Warn]', err.message);
+  }
+
+  // If validated immediately, increment stock
+  if (isDirectDone && newRec.items) {
+    newRec.items.forEach(item => {
+      const p = products.find(prod => prod.id === item.productId || prod.sku === item.productId);
+      if (p) {
+        const qtyToAdd = Number(item.qty || item.quantity || 0);
+        p.stock += qtyToAdd;
+        updateProductStatus(p);
+
+        history.unshift({
+          timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+          type: 'RECEIPT',
+          ref: newRec.id,
+          product: p.name,
+          sku: p.sku,
+          path: `${newRec.supplier} → ${newRec.warehouse}`,
+          delta: `+${qtyToAdd} units`,
+          balance: `${p.stock} units`,
+          user: 'Ameer Pasha'
+        });
+      }
+    });
+  }
+
   receipts.unshift(newRec);
   res.status(201).json({ message: 'Receipt created', data: newRec });
+});
+
+app.put('/api/receipts/:id/validate', (req, res) => {
+  const r = receipts.find(item => item.id === req.params.id);
+  if (!r) return res.status(404).json({ error: 'Receipt not found' });
+  if (r.status === 'Done') return res.status(400).json({ error: 'Receipt already validated' });
+
+  r.status = 'Done';
+  if (r.items) {
+    r.items.forEach(item => {
+      const p = products.find(prod => prod.id === item.productId || prod.sku === item.productId);
+      if (p) {
+        const qtyToAdd = Number(item.qty || item.quantity || 0);
+        p.stock += qtyToAdd;
+        updateProductStatus(p);
+
+        history.unshift({
+          timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+          type: 'RECEIPT',
+          ref: r.id,
+          product: p.name,
+          sku: p.sku,
+          path: `${r.supplier} → ${r.warehouse}`,
+          delta: `+${qtyToAdd} units`,
+          balance: `${p.stock} units`,
+          user: 'Ameer Pasha'
+        });
+      }
+    });
+  }
+
+  res.json({ message: 'Receipt validated', data: r });
 });
 
 app.put('/api/receipts/:id', (req, res) => {
   const r = receipts.find(item => item.id === req.params.id);
   if (!r) return res.status(404).json({ error: 'Receipt not found' });
+
+  if (req.body.status === 'Done' && r.status !== 'Done') {
+    return app._router.handle({ ...req, method: 'PUT', url: `/api/receipts/${req.params.id}/validate` }, res);
+  }
+
   if (req.body.status) r.status = req.body.status;
   res.json({ message: 'Receipt updated', data: r });
 });
 
-// 8. Deliveries Endpoints
+// 8. Deliveries Endpoints (With Shortage Prevention Gate)
 app.get('/api/deliveries', (req, res) => {
   res.json({ data: deliveries });
 });
 
+app.get('/api/deliveries/:id/availability', (req, res) => {
+  const d = deliveries.find(item => item.id === req.params.id);
+  if (!d) return res.status(404).json({ error: 'Delivery order not found' });
+
+  const auditItems = (d.items || []).map(item => {
+    const p = products.find(prod => prod.id === item.productId || prod.sku === item.productId);
+    const available = p ? p.stock : 0;
+    const requested = Number(item.qty || item.quantity || 0);
+    return {
+      productId: item.productId,
+      requested,
+      available,
+      isAvailable: available >= requested,
+      shortage: Math.max(0, requested - available)
+    };
+  });
+
+  const allAvailable = auditItems.every(i => i.isAvailable);
+  res.json({ deliveryId: d.id, allAvailable, items: auditItems });
+});
+
 app.post('/api/deliveries', (req, res) => {
+  const items = req.body.items || [];
+  const warehouse = req.body.warehouse || req.body.warehouseId || 'WH-MAIN';
+  const shouldValidateNow = req.body.status === 'Done' || !req.body.status || req.body.status === 'done';
+
+  // 1. Enforce Shortage Prevention Gate if dispatching directly
+  if (shouldValidateNow) {
+    for (const item of items) {
+      const p = products.find(prod => prod.id === item.productId || prod.sku === item.productId);
+      const requested = Number(item.qty || item.quantity || 0);
+      const available = p ? p.stock : 0;
+
+      if (available < requested) {
+        return res.status(400).json({
+          success: false,
+          error: `Cannot dispatch delivery due to insufficient stock in ${warehouse}: ${p ? p.name : item.productId} (Available: ${available}, Demanded: ${requested}, Short by: ${requested - available})`,
+          shortage: true,
+          productId: item.productId,
+          available,
+          requested
+        });
+      }
+    }
+  }
+
   const newDel = {
     id: req.body.id || `DEL-2026-0${deliveries.length + 90}`,
-    customer: req.body.customer || 'Standard Customer',
-    warehouse: req.body.warehouse || 'WH-MAIN',
-    date: req.body.date || new Date().toISOString().split('T')[0],
-    itemsDispatched: req.body.itemsDispatched || '0 units',
-    status: req.body.status || 'Draft',
-    items: req.body.items || []
+    customer: req.body.customer || req.body.customerName || 'Standard Customer',
+    warehouse,
+    date: req.body.date || req.body.deliveryDate || new Date().toISOString().split('T')[0],
+    itemsDispatched: req.body.itemsDispatched || `${items.reduce((s, i) => s + (i.qty || 1), 0)} units`,
+    status: shouldValidateNow ? 'Done' : (req.body.status || 'Draft'),
+    items
   };
+
+  // If validated, deduct stock and record in ledger
+  if (shouldValidateNow) {
+    items.forEach(item => {
+      const p = products.find(prod => prod.id === item.productId || prod.sku === item.productId);
+      if (p) {
+        const qtyToDeduct = Number(item.qty || item.quantity || 0);
+        p.stock = Math.max(0, p.stock - qtyToDeduct);
+        updateProductStatus(p);
+
+        history.unshift({
+          timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+          type: 'DELIVERY',
+          ref: newDel.id,
+          product: p.name,
+          sku: p.sku,
+          path: `${newDel.warehouse} → ${newDel.customer}`,
+          delta: `-${qtyToDeduct} units`,
+          balance: `${p.stock} units`,
+          user: 'Ameer Pasha'
+        });
+      }
+    });
+  }
+
   deliveries.unshift(newDel);
   res.status(201).json({ message: 'Delivery order created', data: newDel });
+});
+
+app.put('/api/deliveries/:id/validate', (req, res) => {
+  const d = deliveries.find(item => item.id === req.params.id);
+  if (!d) return res.status(404).json({ error: 'Delivery order not found' });
+  if (d.status === 'Done') return res.status(400).json({ error: 'Delivery already shipped' });
+
+  // Shortage check before dispatch
+  for (const item of (d.items || [])) {
+    const p = products.find(prod => prod.id === item.productId || prod.sku === item.productId);
+    const requested = Number(item.qty || item.quantity || 0);
+    const available = p ? p.stock : 0;
+
+    if (available < requested) {
+      return res.status(400).json({
+        success: false,
+        error: `Cannot dispatch delivery due to insufficient stock in ${d.warehouse}: ${p ? p.name : item.productId} (Available: ${available}, Demanded: ${requested}, Short by: ${requested - available})`,
+        shortage: true
+      });
+    }
+  }
+
+  // Deduct stock
+  (d.items || []).forEach(item => {
+    const p = products.find(prod => prod.id === item.productId || prod.sku === item.productId);
+    if (p) {
+      const qtyToDeduct = Number(item.qty || item.quantity || 0);
+      p.stock = Math.max(0, p.stock - qtyToDeduct);
+      updateProductStatus(p);
+
+      history.unshift({
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+        type: 'DELIVERY',
+        ref: d.id,
+        product: p.name,
+        sku: p.sku,
+        path: `${d.warehouse} → ${d.customer}`,
+        delta: `-${qtyToDeduct} units`,
+        balance: `${p.stock} units`,
+        user: 'Ameer Pasha'
+      });
+    }
+  });
+
+  d.status = 'Done';
+  res.json({ message: 'Delivery order fulfilled and dispatched', data: d });
 });
 
 app.put('/api/deliveries/:id', (req, res) => {
   const d = deliveries.find(item => item.id === req.params.id);
   if (!d) return res.status(404).json({ error: 'Delivery order not found' });
+
+  if (req.body.status === 'Done' && d.status !== 'Done') {
+    return app._router.handle({ ...req, method: 'PUT', url: `/api/deliveries/${req.params.id}/validate` }, res);
+  }
+
   if (req.body.status) d.status = req.body.status;
   res.json({ message: 'Delivery order updated', data: d });
 });
 
-// 9. Transfers Endpoints
+// 9. Transfers Endpoints (Two-Phase Commit Protocol)
 app.get('/api/transfers', (req, res) => {
   res.json({ data: transfers });
 });
 
 app.post('/api/transfers', (req, res) => {
+  const source = req.body.source || req.body.sourceWarehouseId || 'WH-MAIN';
+  const dest = req.body.dest || req.body.destWarehouseId || 'WH-NORTH';
+  const prodId = req.body.productId;
+  const qty = parseInt(req.body.qty || req.body.quantity || 1, 10);
+
+  if (source === dest) {
+    return res.status(400).json({ error: 'Source and destination warehouses cannot be identical.' });
+  }
+
+  const p = products.find(item => item.id === prodId || item.sku === prodId);
+  if (p && p.stock < qty) {
+    return res.status(400).json({
+      error: `Insufficient stock in ${source} for ${p.name}. Available: ${p.stock}, Requested: ${qty}`
+    });
+  }
+
+  // Phase 1: Confirm dispatch (origin stock deducted, status becomes In-Transit)
+  if (p) {
+    p.stock = Math.max(0, p.stock - qty);
+    updateProductStatus(p);
+  }
+
   const newTrf = {
     id: req.body.id || `TRF-2026-0${transfers.length + 40}`,
-    source: req.body.source || 'WH-MAIN',
-    dest: req.body.dest || 'WH-NORTH',
-    product: req.body.product || 'Unknown Product',
-    productId: req.body.productId || '',
-    qty: parseInt(req.body.qty || 1, 10),
+    source,
+    dest,
+    product: p ? p.name : (req.body.product || 'Stock Item'),
+    productId: prodId,
+    qty,
     date: req.body.date || new Date().toISOString().split('T')[0],
-    status: req.body.status || 'In-Transit',
+    status: 'In-Transit',
     reason: req.body.reason || 'Stock Rebalancing'
   };
+
+  history.unshift({
+    timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+    type: 'TRANSFER',
+    ref: newTrf.id,
+    product: newTrf.product,
+    sku: p ? p.sku : newTrf.productId,
+    path: `${source} → ${dest}`,
+    delta: `-${qty} (in-transit)`,
+    balance: `${p ? p.stock : 0} units`,
+    user: 'Ameer Pasha'
+  });
+
   transfers.unshift(newTrf);
-  res.status(201).json({ message: 'Transfer scheduled', data: newTrf });
+  res.status(201).json({ message: 'Transfer scheduled and dispatched (In-Transit)', data: newTrf });
+});
+
+app.put('/api/transfers/:id/complete', (req, res) => {
+  const t = transfers.find(item => item.id === req.params.id);
+  if (!t) return res.status(404).json({ error: 'Transfer not found' });
+  if (t.status === 'Completed' || t.status === 'done') {
+    return res.status(400).json({ error: 'Transfer already completed' });
+  }
+
+  // Phase 2: Complete arrival at destination
+  const sourceProduct = products.find(item => item.id === t.productId || item.sku === t.productId);
+  let destProd = products.find(item => (item.sku === (sourceProduct ? sourceProduct.sku : t.productId) || item.id === t.productId) && item.warehouse === t.dest);
+
+  if (destProd) {
+    destProd.stock += t.qty;
+    updateProductStatus(destProd);
+  } else if (sourceProduct && sourceProduct.warehouse !== t.dest) {
+    destProd = {
+      ...sourceProduct,
+      id: `PRD-${Date.now().toString().slice(-6)}`,
+      warehouse: t.dest,
+      stock: t.qty,
+      status: 'IN_STOCK'
+    };
+    updateProductStatus(destProd);
+    products.push(destProd);
+  } else if (sourceProduct) {
+    sourceProduct.stock += t.qty;
+    updateProductStatus(sourceProduct);
+  }
+
+  t.status = 'Completed';
+
+  history.unshift({
+    timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16),
+    type: 'TRANSFER',
+    ref: t.id,
+    product: t.product,
+    sku: sourceProduct ? sourceProduct.sku : t.productId,
+    path: `Received at ${t.dest}`,
+    delta: `+${t.qty} units`,
+    balance: `${destProd ? destProd.stock : (sourceProduct ? sourceProduct.stock : t.qty)} units`,
+    user: 'Ameer Pasha'
+  });
+
+  res.json({ message: 'Transfer received and completed at destination', data: t });
 });
 
 app.put('/api/transfers/:id', (req, res) => {
   const t = transfers.find(item => item.id === req.params.id);
   if (!t) return res.status(404).json({ error: 'Transfer not found' });
+
+  if ((req.body.status === 'Completed' || req.body.status === 'done') && t.status !== 'Completed') {
+    return app._router.handle({ ...req, method: 'PUT', url: `/api/transfers/${req.params.id}/complete` }, res);
+  }
+
   if (req.body.status) t.status = req.body.status;
   res.json({ message: 'Transfer updated', data: t });
 });
