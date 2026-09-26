@@ -10,7 +10,7 @@ import {
   Layers,
   ArrowRight
 } from 'lucide-react';
-import { useProducts } from '../products/hooks/useProducts';
+import { useProducts } from '../inventory/products/hooks/useProducts';
 import { stockLedgerService } from '../shared/services/stockLedgerService';
 
 export default function DashboardSummary({ onNavigate }) {

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Package, ShieldCheck, User, GitBranch, Bell } from 'lucide-react';
+import { Package, GitBranch, Layers, ShieldCheck } from 'lucide-react';
 
-export default function Navbar({ onQuickAdjust, activeTab }) {
+export default function Navbar({ onAddProduct, activeTab }) {
   return (
     <header className="navbar">
       <div className="navbar-left">
@@ -11,38 +11,29 @@ export default function Navbar({ onQuickAdjust, activeTab }) {
           </div>
           <div>
             <span className="brand-title">StockSense</span>
-            <span className="brand-badge">Modular IMS v1.0</span>
+            <span className="brand-badge">Member 2: Product & Warehouse</span>
           </div>
         </div>
 
         <div className="navbar-facility-tag">
           <span className="facility-dot" />
-          <span>All Facilities (Central Network)</span>
+          <span>Application & Service Layer Active</span>
         </div>
       </div>
 
       <div className="navbar-right">
-        {/* Auto Commit Sync Status Badge */}
-        <div className="sync-status-badge" title="Hourly Git Auto-Sync is configured and tracking repository progress">
-          <GitBranch size={13} className="text-emerald-400 animate-pulse" />
-          <span>Auto-Sync: Active (60m)</span>
+        {/* Architecture Mode Badge */}
+        <div className="sync-status-badge" title="Architecture decoupled from database storage">
+          <ShieldCheck size={13} className="text-emerald-400" />
+          <span>Shared DB Consumer Contract: OK</span>
         </div>
-
-        {/* Quick Adjust Button */}
-        <button
-          onClick={onQuickAdjust}
-          className="btn-quick-adjust"
-          title="Audit physical count vs system recorded quantity"
-        >
-          Quick Audit
-        </button>
 
         {/* User Profile */}
         <div className="user-profile-badge">
           <div className="avatar-circle">TJ</div>
           <div className="user-info-text">
             <span className="user-name">Tarun J.</span>
-            <span className="user-role">Inventory Lead (Person 2)</span>
+            <span className="user-role">Member 2 (Master Data Lead)</span>
           </div>
         </div>
       </div>

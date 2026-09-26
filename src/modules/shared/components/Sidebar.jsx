@@ -2,59 +2,77 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   Package, 
+  Tag, 
+  Warehouse, 
+  MapPin, 
+  Sliders, 
   ArrowDownLeft, 
   ArrowUpRight, 
-  SlidersHorizontal, 
   ArrowLeftRight, 
+  SlidersHorizontal,
   History, 
-  Warehouse, 
-  Settings, 
-  User, 
-  LogOut,
-  Layers
+  Database,
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
 
-export default function Sidebar({ activeTab, onSelectTab, lowStockCount = 0 }) {
+export default function Sidebar({ activeTab, onSelectTab }) {
   const navSections = [
     {
-      title: 'CORE OVERVIEW',
-      items: [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, owner: 'Faizan' }
-      ]
-    },
-    {
-      title: 'INVENTORY & CATALOG',
+      title: 'PRODUCT & WAREHOUSE (YOUR SCOPE)',
       items: [
         { 
           id: 'products', 
           label: 'Products', 
           icon: Package, 
-          owner: 'Tarun ⭐', 
-          badge: lowStockCount > 0 ? `${lowStockCount} alert` : null,
-          badgeType: 'warning'
+          owner: 'Tarun (You)', 
+          isMember2: true
         },
         { 
-          id: 'adjustments', 
-          label: 'Stock Adjustments', 
-          icon: SlidersHorizontal, 
-          owner: 'Tarun ⭐' 
+          id: 'categories', 
+          label: 'Categories', 
+          icon: Tag, 
+          owner: 'Tarun (You)', 
+          isMember2: true
+        },
+        { 
+          id: 'warehouses', 
+          label: 'Warehouses', 
+          icon: Warehouse, 
+          owner: 'Tarun (You)', 
+          isMember2: true
+        },
+        { 
+          id: 'locations', 
+          label: 'Location Hierarchy', 
+          icon: MapPin, 
+          owner: 'Tarun (You)', 
+          isMember2: true
+        },
+        { 
+          id: 'reorder', 
+          label: 'Reorder Rules', 
+          icon: Sliders, 
+          owner: 'Tarun (You)', 
+          isMember2: true
         }
       ]
     },
     {
-      title: 'STOCK OPERATIONS',
+      title: 'OPERATIONS & MOVEMENT (MEMBER 3)',
       items: [
-        { id: 'receipts', label: 'Receipts (Inbound)', icon: ArrowDownLeft, owner: 'Prince', status: 'Inbound' },
-        { id: 'deliveries', label: 'Delivery Orders', icon: ArrowUpRight, owner: 'Prince', status: 'Outbound' },
-        { id: 'transfers', label: 'Internal Transfers', icon: ArrowLeftRight, owner: 'Ameer', status: 'Movement' },
-        { id: 'ledger', label: 'Stock Ledger (Audit)', icon: History, owner: 'Ameer', status: 'Log' }
+        { id: 'receipts', label: 'Receipts (Inbound)', icon: ArrowDownLeft, owner: 'Member 3' },
+        { id: 'deliveries', label: 'Delivery Orders', icon: ArrowUpRight, owner: 'Member 3' },
+        { id: 'transfers', label: 'Internal Transfers', icon: ArrowLeftRight, owner: 'Member 3' },
+        { id: 'adjustments', label: 'Stock Adjustments', icon: SlidersHorizontal, owner: 'Member 3' }
       ]
     },
     {
-      title: 'CONFIGURATION',
+      title: 'CORE PLATFORM (MEMBERS 1 & 4)',
       items: [
-        { id: 'warehouses', label: 'Warehouses & Bins', icon: Warehouse, owner: 'Ameer' },
-        { id: 'settings', label: 'System Settings', icon: Settings, owner: 'System' }
+        { id: 'dashboard', label: 'Dashboard & Alerts', icon: LayoutDashboard, owner: 'Member 4' },
+        { id: 'ledger', label: 'Stock Ledger (Audit)', icon: History, owner: 'Member 1' },
+        { id: 'contract', label: 'Shared DB Contract', icon: Database, owner: 'DB Lead' }
       ]
     }
   ];
@@ -83,11 +101,10 @@ export default function Sidebar({ activeTab, onSelectTab, lowStockCount = 0 }) {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {item.badge && (
-                          <span className="nav-pill-badge">{item.badge}</span>
-                        )}
-                        {item.owner.includes('Tarun') && (
+                        {item.isMember2 ? (
                           <span className="active-lead-tag">YOUR MODULE</span>
+                        ) : (
+                          <span className="text-[10px] text-neutral-500 font-mono">{item.owner}</span>
                         )}
                       </div>
                     </button>
@@ -103,13 +120,12 @@ export default function Sidebar({ activeTab, onSelectTab, lowStockCount = 0 }) {
         <div className="team-collab-box">
           <div className="text-xs font-semibold text-neutral-300 mb-1 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-            Team StockSense Active
+            Member 2 Architecture Active
           </div>
           <div className="text-[11px] text-neutral-400 leading-tight">
-            Tarun: Products & Adjustments<br/>
-            Faizan: Auth & Dashboard<br/>
-            Prince: Receipts & Deliveries<br/>
-            Ameer: Transfers & Ledger
+            Role: Product & Warehouse Application Layer<br/>
+            Consumes: Shared DB Contract<br/>
+            Scope: Master Data + Policies (Clean Boundary)
           </div>
         </div>
       </div>
