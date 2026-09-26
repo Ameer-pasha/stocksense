@@ -1,7 +1,25 @@
-import React from 'react';
-import { Package, GitBranch, Layers, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Package, ShieldCheck, Globe, Wifi } from 'lucide-react';
+import { apiClient } from '../services/apiClient';
 
-export default function Navbar({ onAddProduct, activeTab }) {
+export default function Navbar({ activeTab }) {
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const probe = async () => {
+      const live = await apiClient.checkHealth();
+      if (mounted) setIsBackendConnected(live);
+    };
+
+    probe();
+    const interval = setInterval(probe, 8000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <header className="navbar">
       <div className="navbar-left">
@@ -22,10 +40,25 @@ export default function Navbar({ onAddProduct, activeTab }) {
       </div>
 
       <div className="navbar-right">
-        {/* Architecture Mode Badge */}
-        <div className="sync-status-badge" title="Architecture decoupled from database storage">
-          <ShieldCheck size={13} className="text-emerald-400" />
-          <span>Shared DB Consumer Contract: OK</span>
+        {/* Real-time Integration Status Badge */}
+        <div 
+          className="sync-status-badge cursor-help" 
+          title={isBackendConnected 
+            ? `Connected to live backend REST API at ${apiClient.getBaseUrl()}` 
+            : `Running in Standalone Mock Mode. Ready to connect to backend at ${apiClient.getBaseUrl()}`
+          }
+        >
+          {isBackendConnected ? (
+            <>
+              <Wifi size={13} className="text-emerald-400 animate-pulse" />
+              <span className="text-emerald-300 font-medium">REST API: Live (Port 8000)</span>
+            </>
+          ) : (
+            <>
+              <Globe size={13} className="text-blue-400" />
+              <span className="text-neutral-300">Endpoints: Open (Ready for Team API)</span>
+            </>
+          )}
         </div>
 
         {/* User Profile */}
